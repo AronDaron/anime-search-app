@@ -65,7 +65,7 @@ export const Search: React.FC<SearchProps> = ({ searchQuery, isAiMode }) => {
                         return;
                     }
 
-                    const titles = await fetchAIAnimeTitles(debouncedSearchQuery, apiKey);
+                    const { titles } = await fetchAIAnimeTitles(debouncedSearchQuery, apiKey);
 
                     if (titles.length === 0) {
                         setResults([]);

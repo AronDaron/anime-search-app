@@ -94,7 +94,7 @@ query ($page: Int, $perPage: Int) {
 `;
 
 const SEARCH_ANIME_QUERY = `
-query ($page: Int, $perPage: Int, $search: String, $season: MediaSeason, $seasonYear: Int, $genre_in: [String]) {
+query ($page: Int, $perPage: Int, $search: String, $season: MediaSeason, $seasonYear: Int, $genre_in: [String], $tag_in: [String]) {
   Page (page: $page, perPage: $perPage) {
     pageInfo {
       total
@@ -102,7 +102,7 @@ query ($page: Int, $perPage: Int, $search: String, $season: MediaSeason, $season
       lastPage
       hasNextPage
     }
-    media (type: ANIME, search: $search, season: $season, seasonYear: $seasonYear, genre_in: $genre_in, sort: POPULARITY_DESC, isAdult: false) {
+    media (type: ANIME, search: $search, season: $season, seasonYear: $seasonYear, genre_in: $genre_in, tag_in: $tag_in, sort: POPULARITY_DESC, isAdult: false) {
       id
       title {
         romaji
@@ -130,10 +130,10 @@ export const searchAnime = async (
   perPage = 20,
   season?: MediaSeason,
   seasonYear?: number,
-  genres?: string[]
+  genres?: string[],
+  tags?: string[]
 ) => {
-  // Jeśli nie ma ani wyszukiwania, ani sezonu, ani roku, ani gatunków - zwracamy puste
-  if (!search && !season && !seasonYear && (!genres || genres.length === 0)) {
+  if (!search && !season && !seasonYear && (!genres || genres.length === 0) && (!tags || tags.length === 0)) {
     return { Page: { media: [], pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false } } };
   }
 
@@ -142,8 +142,38 @@ export const searchAnime = async (
   if (season) variables.season = season;
   if (seasonYear) variables.seasonYear = seasonYear;
   if (genres && genres.length > 0) variables.genre_in = genres;
+  if (tags && tags.length > 0) variables.tag_in = tags;
 
   return fetchAniList<PageData>(SEARCH_ANIME_QUERY, variables);
+};
+
+const SEARCH_BY_TITLE_EXACT_QUERY = `
+query ($search: String) {
+  Media (type: ANIME, search: $search, sort: POPULARITY_DESC, isAdult: false) {
+    id
+    title {
+      romaji
+      english
+    }
+    coverImage {
+      extraLarge
+    }
+    averageScore
+    seasonYear
+    episodes
+    description
+  }
+}
+`;
+
+export const getAnimeByExactTitle = async (title: string): Promise<AnimeMedia | null> => {
+  try {
+     const data = await fetchAniList<{ Media: AnimeMedia }>(SEARCH_BY_TITLE_EXACT_QUERY, { search: title });
+     return data.Media;
+  } catch (error) {
+     console.warn(`Could not find exact match for title: ${title}`);
+     return null;
+  }
 };
 
 export interface JikanEpisode {

@@ -228,48 +228,80 @@ export const AnimeDetails: React.FC = () => {
 
                 {activeTab === 'episodes' && (
                     <div className="tab-content fade-in-tab">
-                        {anime.streamingEpisodes?.length > 0 ? (
-                            <div className="anime-episodes glass-panel-inner mt-4">
-                                <h3>Odcinki do obejrzenia ({anime.streamingEpisodes.length})</h3>
-                                <div className="episodes-list">
-                                    {anime.streamingEpisodes.map((ep, index) => {
-                                        const jikanMatch = malEpisodes.length > index ? malEpisodes[index] : null;
-                                        const rating = jikanMatch?.score;
+                        {(() => {
+                            let episodesList: any[] = [];
 
-                                        return (
-                                            <div key={index} className="episode-item">
-                                                <div className="episode-thumbnail-container">
-                                                    <img src={ep.thumbnail} alt={ep.title} className="episode-thumbnail" loading="lazy" referrerPolicy="no-referrer" />
-                                                    <div className="episode-play-overlay">
-                                                        <a href={ep.url} target="_blank" rel="noopener noreferrer">▶</a>
+                            // 1. Try AniList streaming episodes first
+                            if (anime.streamingEpisodes && anime.streamingEpisodes.length > 0) {
+                                // Fix AniList merging cours (e.g. Spy x Family showing 25 for part 1)
+                                // Limit to actual episode count if known
+                                const limit = anime.episodes || anime.streamingEpisodes.length;
+                                const limitedStreaming = anime.streamingEpisodes.slice(0, limit);
+
+                                episodesList = limitedStreaming.map((ep, index) => {
+                                    const jikanMatch = malEpisodes.length > index ? malEpisodes[index] : null;
+                                    return {
+                                        title: ep.title,
+                                        thumbnail: ep.thumbnail,
+                                        url: ep.url,
+                                        site: ep.site,
+                                        rating: jikanMatch?.score
+                                    };
+                                });
+                            }
+                            // 2. Fallback to Jikan (MyAnimeList) episodes if AniList has no streams (e.g. Cour 2)
+                            else if (malEpisodes && malEpisodes.length > 0) {
+                                episodesList = malEpisodes.map(ep => ({
+                                    title: `${ep.mal_id}. ${ep.title}`,
+                                    thumbnail: anime.bannerImage || anime.coverImage.extraLarge || anime.coverImage.large,
+                                    url: ep.url,
+                                    site: 'MyAnimeList',
+                                    rating: ep.score
+                                }));
+                            }
+
+                            if (episodesList.length > 0) {
+                                return (
+                                    <div className="anime-episodes glass-panel-inner mt-4">
+                                        <h3>Lista Odcinków ({episodesList.length})</h3>
+                                        <div className="episodes-list">
+                                            {episodesList.map((ep, index) => (
+                                                <div key={index} className="episode-item">
+                                                    <div className="episode-thumbnail-container">
+                                                        <img src={ep.thumbnail} alt={ep.title} className="episode-thumbnail" loading="lazy" referrerPolicy="no-referrer" />
+                                                        <div className="episode-play-overlay">
+                                                            <a href={ep.url} target="_blank" rel="noopener noreferrer">▶</a>
+                                                        </div>
+                                                    </div>
+                                                    <div className="episode-info">
+                                                        <h4>{ep.title}</h4>
+                                                        <div className="episode-meta">
+                                                            <span className="platform-tag">{ep.site}</span>
+                                                            {ep.rating && ep.rating > 0 ? (
+                                                                <div className="rating-circle">
+                                                                    <span className="rating-star">★</span>
+                                                                    <span className="rating-number">{(ep.rating * 2).toFixed(1)}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="rating-circle empty">
+                                                                    <span className="rating-number">N/A</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="episode-info">
-                                                    <h4>{ep.title}</h4>
-                                                    <div className="episode-meta">
-                                                        <span className="platform-tag">{ep.site}</span>
-                                                        {rating && rating > 0 ? (
-                                                            <div className="rating-circle">
-                                                                <span className="rating-star">★</span>
-                                                                <span className="rating-number">{(rating * 2).toFixed(1)}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="rating-circle empty">
-                                                                <span className="rating-number">N/A</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="empty-state-tab mt-4 glass-panel-inner">
-                                <p>Brak dostępnych odcinków do strumieniowania dla tej serii.</p>
-                            </div>
-                        )}
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div className="empty-state-tab mt-4 glass-panel-inner">
+                                        <p>Brak dostępnych odcinków w bazie dla tej serii.</p>
+                                    </div>
+                                );
+                            }
+                        })()}
                     </div>
                 )}
 

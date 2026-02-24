@@ -1,6 +1,15 @@
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-export const fetchAIAnimeTitles = async (description: string, apiKey: string): Promise<string[]> => {
+export interface AISearchResult {
+    titles: string[];
+    searchParams?: {
+        genres?: string[];
+        tags?: string[];
+        seasonYear?: number;
+    };
+}
+
+export const fetchAIAnimeTitles = async (description: string, apiKey: string): Promise<AISearchResult> => {
     if (!apiKey) {
         throw new Error("Brak klucza API OpenRouter. Dodaj go w ustawieniach lub w pliku .env (VITE_OPENROUTER_KEY).");
     }
@@ -11,7 +20,16 @@ export const fetchAIAnimeTitles = async (description: string, apiKey: string): P
         messages: [
             {
                 role: "system",
-                content: "You are an expert anime recommendation engine. The user will give you a description of an anime plot or elements. You must reply ONLY with a JSON object containing an array of strings under the key 'titles'. These strings should be the exact official English or Romaji titles of the anime that match the description perfectly. Return up to 5 results. Do not include any explanations, just the JSON."
+                content: `You are an expert anime recommendation engine. The user will give you a description of an anime plot or elements. 
+                You must reply ONLY with a JSON object containing two keys:
+                1. 'titles': an array of strings. These strings should be the exact official English or Romaji titles of the anime that match the description perfectly. Return up to 5 results.
+                2. 'searchParams': an object containing parameters extracted from the user's description. Use this to help find newer anime that you might not know by title. It can contain:
+                   - 'genres': array of strings (e.g., ["Action", "Fantasy", "Romance"])
+                   - 'tags': array of strings (e.g., ["Magic School", "Demons", "Vampire"])
+                   - 'seasonYear': number (e.g., 2024), ONLY if the user explicitly mentions a year or says "newest/this year".
+                
+                If you cannot extract a parameter, omit it from the 'searchParams' object.
+                Do not include any explanations, just the JSON.`
             },
             {
                 role: "user",
@@ -37,10 +55,13 @@ export const fetchAIAnimeTitles = async (description: string, apiKey: string): P
     try {
         const content = data.choices[0].message.content;
         const parsed = JSON.parse(content);
-        return parsed.titles || [];
+        return {
+            titles: parsed.titles || [],
+            searchParams: parsed.searchParams
+        };
     } catch (e) {
         console.error("Failed to parse AI response:", e);
-        return [];
+        return { titles: [] };
     }
 };
 

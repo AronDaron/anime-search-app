@@ -7,6 +7,7 @@ import { Search } from './components/anime/Search';
 import { AnimeDetails } from './components/anime/AnimeDetails';
 import { GenresView } from './components/anime/GenresView';
 import { SeasonsView } from './components/anime/SeasonsView';
+import { AISearchView } from './views/AISearchView';
 import { PlaceholderSection } from './components/shared/PlaceholderSection';
 import './assets/index.css';
 
@@ -39,6 +40,7 @@ function App(): React.JSX.Element {
           <Route path="/anime/:id" element={<AnimeDetails />} />
           <Route path="/anime/genres" element={<GenresView />} />
           <Route path="/anime/seasons" element={<SeasonsView />} />
+          <Route path="/ai-search" element={<AISearchView />} />
 
           <Route path="/series" element={<PlaceholderSection title="Neo Seriale" colorClass="neon-text-purple" />} />
           <Route path="/movies" element={<PlaceholderSection title="Neo Filmy" colorClass="neon-text-red" />} />

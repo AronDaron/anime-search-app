@@ -10,7 +10,7 @@ interface NavbarProps {
     setIsAiMode: (ai: boolean) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isAiMode, setIsAiMode }) => {
+export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isAiMode }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -98,12 +98,16 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                         />
                     </div>
                     <button
-                        className={`nav-btn ${isAiMode ? 'active' : ''}`}
-                        onClick={() => setIsAiMode(!isAiMode)}
-                        style={isAiMode ? { background: 'rgba(191,0,255,0.2)', borderColor: '#bf00ff' } : {}}
+                        className={`nav-btn ${path === '/ai-search' ? 'active' : ''}`}
+                        onClick={() => {
+                            navigate('/ai-search');
+                            setIsDropdownOpen(false);
+                            setSearchQuery('');
+                        }}
+                        style={path === '/ai-search' ? { background: 'rgba(191,0,255,0.2)', borderColor: '#bf00ff' } : {}}
                         title="AI Plot Search"
                     >
-                        AI Search
+                        🧠 AI Search
                     </button>
                     <button className={`nav-btn ${path === '/anime/genres' ? 'active' : ''}`} onClick={() => navigate('/anime/genres')}>
                         Gatunki
