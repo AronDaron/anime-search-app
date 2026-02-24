@@ -12,6 +12,8 @@ declare global {
         getHistory: () => Promise<any[]>
         addTranslation: (animeId: number, desc: string) => Promise<any>
         getTranslation: (animeId: number) => Promise<{ description_pl: string } | undefined>
+        addReviewSummary: (animeId: number, summary: string) => Promise<any>
+        getReviewSummary: (animeId: number) => Promise<{ summary_pl: string } | undefined>
       }
     }
   }

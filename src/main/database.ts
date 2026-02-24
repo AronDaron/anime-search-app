@@ -23,6 +23,12 @@ db.exec(`
     description_pl TEXT NOT NULL,
     translatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS review_summaries (
+    animeId INTEGER PRIMARY KEY,
+    summary_pl TEXT NOT NULL,
+    generatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 export const addFavorite = (anime: { id: number, title: string, coverImage: string }) => {
@@ -57,5 +63,15 @@ export const addTranslation = (animeId: number, description_pl: string) => {
 
 export const getTranslation = (animeId: number) => {
     const stmt = db.prepare('SELECT description_pl FROM translations WHERE animeId = ?');
+    return stmt.get(animeId);
+};
+
+export const addReviewSummary = (animeId: number, summary_pl: string) => {
+    const stmt = db.prepare('INSERT OR REPLACE INTO review_summaries (animeId, summary_pl) VALUES (?, ?)');
+    return stmt.run(animeId, summary_pl);
+};
+
+export const getReviewSummary = (animeId: number) => {
+    const stmt = db.prepare('SELECT summary_pl FROM review_summaries WHERE animeId = ?');
     return stmt.get(animeId);
 };

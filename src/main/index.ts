@@ -53,7 +53,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // Database IPC Handlers
-  const { addFavorite, removeFavorite, getFavorites, addHistory, getHistory, addTranslation, getTranslation } = require('./database')
+  const { addFavorite, removeFavorite, getFavorites, addHistory, getHistory, addTranslation, getTranslation, addReviewSummary, getReviewSummary } = require('./database')
   ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
   ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
   ipcMain.handle('db:getFavorites', () => getFavorites())
@@ -61,6 +61,8 @@ app.whenReady().then(() => {
   ipcMain.handle('db:getHistory', () => getHistory())
   ipcMain.handle('db:addTranslation', (_, animeId, desc) => addTranslation(animeId, desc))
   ipcMain.handle('db:getTranslation', (_, animeId) => getTranslation(animeId))
+  ipcMain.handle('db:addReviewSummary', (_, animeId, summary) => addReviewSummary(animeId, summary))
+  ipcMain.handle('db:getReviewSummary', (_, animeId) => getReviewSummary(animeId))
 
   createWindow()
 

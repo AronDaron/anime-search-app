@@ -253,6 +253,18 @@ export interface AnimeDetailsData {
       url: string;
       site: string;
     }[];
+    reviews: {
+      edges: {
+        node: {
+          id: number;
+          summary: string;
+          body: string;
+          rating: number;
+          ratingAmount: number;
+          score: number;
+        }
+      }[]
+    };
   };
 }
 
@@ -344,6 +356,18 @@ query ($id: Int) {
       thumbnail
       url
       site
+    }
+    reviews(sort: [RATING_DESC, SCORE_DESC], perPage: 15) {
+      edges {
+        node {
+          id
+          summary
+          body
+          rating
+          ratingAmount
+          score
+        }
+      }
     }
   }
 }

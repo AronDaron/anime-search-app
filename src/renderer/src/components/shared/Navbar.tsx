@@ -105,9 +105,16 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                             setSearchQuery('');
                         }}
                         style={path === '/ai-search' ? { background: 'rgba(191,0,255,0.2)', borderColor: '#bf00ff' } : {}}
-                        title="AI Plot Search"
+                        title="Wyszukiwanie AI"
                     >
-                        🧠 AI Search
+                        🧠 Wyszukiwanie AI
+                    </button>
+                    <button
+                        className={`nav-btn ${path === '/anime/filter-search' ? 'active' : ''}`}
+                        onClick={() => navigate('/anime/filter-search')}
+                        title="ZAAWANSOWANE WYSZUKIWANIE"
+                    >
+                        🔍 Wyszukiwanie
                     </button>
                     <button className={`nav-btn ${path === '/anime/genres' ? 'active' : ''}`} onClick={() => navigate('/anime/genres')}>
                         Gatunki

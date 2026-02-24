@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAnimeDetails, getAnimeEpisodesFromJikan, AnimeDetailsData, JikanEpisode } from '../../api/anilist';
-import { translateDescriptionToPolish } from '../../api/ai';
+import { translateDescriptionToPolish, summarizeReviews } from '../../api/ai';
+import { Sparkles, MessageSquare } from 'lucide-react';
 import './AnimeDetails.css';
 
 const apiToPolishGenre = (genre: string): string => {
@@ -22,7 +23,7 @@ export const AnimeDetails: React.FC = () => {
     const [malEpisodes, setMalEpisodes] = useState<JikanEpisode[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
-    const [activeTab, setActiveTab] = useState<'info' | 'episodes' | 'characters' | 'stats'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'episodes' | 'characters' | 'stats' | 'opinions'>('info');
     const [expandedEpisodeIndex, setExpandedEpisodeIndex] = useState<number | null>(null);
 
     const generateSlug = (title: string) => {
@@ -32,6 +33,10 @@ export const AnimeDetails: React.FC = () => {
     // Translation states
     const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
     const [isTranslating, setIsTranslating] = useState(false);
+
+    // AI Reviews states
+    const [aiReviewSummary, setAiReviewSummary] = useState<string | null>(null);
+    const [isSummarizing, setIsSummarizing] = useState(false);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -77,6 +82,54 @@ export const AnimeDetails: React.FC = () => {
                                 })
                                 .catch(err => console.error("Translation threw an error:", err))
                                 .finally(() => setIsTranslating(false));
+                        }
+                    }
+                }
+
+                // Try to get AI Review Summary
+                if (response.Media.reviews?.edges && response.Media.reviews.edges.length > 0) {
+                    let cachedSummary: string | null = null;
+                    if (window.api && window.api.db) {
+                        try {
+                            const cached = await window.api.db.getReviewSummary(response.Media.id);
+                            if (cached && cached.summary_pl) {
+                                cachedSummary = cached.summary_pl;
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch review summary from DB:", err);
+                        }
+                    }
+
+                    if (cachedSummary) {
+                        setAiReviewSummary(cachedSummary);
+                    } else {
+                        // Gather reviews text
+                        const reviewsText = response.Media.reviews.edges
+                            .slice(0, 10) // Take top 10 maximum to not overflow token limits
+                            .map(edge => edge.node.body || edge.node.summary)
+                            .filter(Boolean) as string[];
+
+                        if (reviewsText.length > 0) {
+                            const apiKey = import.meta.env.VITE_OPENROUTER_KEY || '';
+                            if (apiKey) {
+                                setIsSummarizing(true);
+                                summarizeReviews(reviewsText, apiKey)
+                                    .then(async (summary) => {
+                                        if (summary) {
+                                            setAiReviewSummary(summary);
+                                            // Save to DB Cache
+                                            if (window.api && window.api.db) {
+                                                try {
+                                                    await window.api.db.addReviewSummary(response.Media.id, summary);
+                                                } catch (err) {
+                                                    console.error("Failed to save review summary to DB:", err);
+                                                }
+                                            }
+                                        }
+                                    })
+                                    .catch(err => console.error("Review summarizing threw an error:", err))
+                                    .finally(() => setIsSummarizing(false));
+                            }
                         }
                     }
                 }
@@ -174,6 +227,10 @@ export const AnimeDetails: React.FC = () => {
                         <button className={`tab-btn ${activeTab === 'characters' ? 'active' : ''}`} onClick={() => setActiveTab('characters')}>Bohaterowie</button>
                     )}
                     <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}>Statystyki</button>
+                    <button className={`tab-btn ${activeTab === 'opinions' ? 'active' : ''}`} onClick={() => setActiveTab('opinions')}>
+                        <Sparkles size={14} style={{ display: 'inline', marginRight: '4px', marginBottom: '-2px', color: 'var(--neon-purple)' }} />
+                        Opinie AI
+                    </button>
                 </div>
 
                 <div className="anime-details-header">
@@ -432,6 +489,40 @@ export const AnimeDetails: React.FC = () => {
                                 </ul>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === 'opinions' && (
+                    <div className="tab-content fade-in-tab">
+                        <div className="anime-opinions mt-4">
+                            <div className="opinions-header" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1.5rem' }}>
+                                <MessageSquare size={24} className="neon-text-purple" />
+                                <h3>Co społeczność sądzi o tym anime?</h3>
+                            </div>
+
+                            {isSummarizing ? (
+                                <div className="ai-thinking-box glass-panel-inner" style={{ padding: '2rem', textAlign: 'center', borderColor: 'rgba(191,0,255,0.3)' }}>
+                                    <div className="neon-spinner purple" style={{ margin: '0 0 1rem 0' }}></div>
+                                    <h4 style={{ color: 'var(--neon-purple)', margin: '0 0 0.5rem 0' }}>AI analizuje recenzje...</h4>
+                                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>Model językowy czyta setki angielskich opinii z AniList i przygotowuje dla Ciebie bezspoilerowe podsumowanie zalet i wad tej produkcji.</p>
+                                </div>
+                            ) : aiReviewSummary ? (
+                                <div className="ai-summary-result glass-panel-inner fade-in" style={{ padding: '1.5rem', borderLeft: '4px solid var(--neon-purple)', background: 'rgba(191,0,255,0.05)' }}>
+                                    <p style={{ lineHeight: '1.7', margin: 0 }} dangerouslySetInnerHTML={{ __html: aiReviewSummary }}></p>
+                                    <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>
+                                        Podsumowanie wygenerowane maszynowo przez model AI na podstawie publicznych recenzji.
+                                    </div>
+                                </div>
+                            ) : anime.reviews?.edges && anime.reviews.edges.length > 0 ? (
+                                <div className="empty-state-tab glass-panel-inner">
+                                    <p>Oczekujące recenzje. Jeśli to widzisz, aplikacja napotkała błąd podczas próby wygenerowania podsumowania ze strony API OpenRouter (Brak limitów lub skonfigurowanego klucza).</p>
+                                </div>
+                            ) : (
+                                <div className="empty-state-tab glass-panel-inner">
+                                    <p>To anime jest zbyt niszowe lub nowe. Brak wystarczającej ilości recenzji w bazie AniList do wygenerowania modelu opinii.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

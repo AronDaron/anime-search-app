@@ -115,3 +115,62 @@ export const translateDescriptionToPolish = async (description: string, apiKey: 
         return null;
     }
 };
+
+export const summarizeReviews = async (reviews: string[], apiKey: string): Promise<string | null> => {
+    if (!apiKey) {
+        console.warn("Brak klucza API OpenRouter do streszczania recenzji.");
+        return null;
+    }
+
+    if (!reviews || reviews.length === 0) {
+        return null;
+    }
+
+    const payload = {
+        model: "google/gemini-3-flash-preview",
+        messages: [
+            {
+                role: "system",
+                content: `Jesteś ekspertem od anime. Poniżej dostaniesz listę recenzji danego widowiska napisanych przez obumarłą społeczność fanów po angielsku. 
+                Twoim zadaniem jest stworzenie JEDNEGO spójnego, obiektywnego i krótkiego podsumowania tych opinii w języku polskim ("Co lidzie sądzą o tym anime?").
+                
+                Zasady:
+                - Podsumuj NAJWAŻNIEJSZE wady i zalety pojawiające się w tych recenzjach.
+                - Nie spoiluj fabuły!
+                - Zwróć tylko wygenerowany tekst w języku polskim. Możesz używać znaczników HTML <b> dla pogrubień, <i> dla kursywy i <br> dla nowych linii (ok. 2-3 zgrabne akapity to idealna wielkość).
+                - Nie odzywaj się "Cześć" ani nie pisz "Oto podsumowanie". Od razu przejdź do rzeczy.
+                - Jeśli recenzje są bardzo skrajne, napisz, że "zdania są mocno podzielone".`
+            },
+            {
+                role: "user",
+                content: "Oto wyciągnięte recenzje społeczności do podsumowania:\n\n" + reviews.map((r, i) => `--- RECENZJA ${i + 1} ---\n${r}`).join("\n\n")
+            }
+        ]
+    };
+
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(`Błąd podsumowania AI z OpenRouter:`, data);
+            return null;
+        }
+
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) return null;
+        
+        return content.trim();
+    } catch (e) {
+        console.error("Błąd przetwarzania odpowiedzi z API tłumacza (Streszczenia):", e);
+        return null;
+    }
+};

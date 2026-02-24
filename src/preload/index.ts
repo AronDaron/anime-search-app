@@ -10,7 +10,9 @@ const api = {
     addHistory: (query: string) => ipcRenderer.invoke('db:addHistory', query),
     getHistory: () => ipcRenderer.invoke('db:getHistory'),
     addTranslation: (animeId: number, desc: string) => ipcRenderer.invoke('db:addTranslation', animeId, desc),
-    getTranslation: (animeId: number) => ipcRenderer.invoke('db:getTranslation', animeId)
+    getTranslation: (animeId: number) => ipcRenderer.invoke('db:getTranslation', animeId),
+    addReviewSummary: (animeId: number, summary: string) => ipcRenderer.invoke('db:addReviewSummary', animeId, summary),
+    getReviewSummary: (animeId: number) => ipcRenderer.invoke('db:getReviewSummary', animeId)
   }
 }
 
