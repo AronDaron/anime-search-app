@@ -6,10 +6,24 @@ import { searchAnime, AnimeMedia } from '../../api/anilist';
 import '../shared/Grid.css';
 
 const GENRES = [
-    "Action", "Adventure", "Comedy", "Drama", "Ecchi", "Fantasy",
-    "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery",
-    "Psychological", "Romance", "Sci-Fi", "Slice of Life",
-    "Sports", "Supernatural", "Thriller"
+    { label: "Akcja", id: "Action" },
+    { label: "Przygoda", id: "Adventure" },
+    { label: "Komedia", id: "Comedy" },
+    { label: "Dramat", id: "Drama" },
+    { label: "Ecchi", id: "Ecchi" },
+    { label: "Fantasy", id: "Fantasy" },
+    { label: "Horror", id: "Horror" },
+    { label: "Magiczne Dziewczyny", id: "Mahou Shoujo" },
+    { label: "Mecha", id: "Mecha" },
+    { label: "Muzyczne", id: "Music" },
+    { label: "Tajemnica", id: "Mystery" },
+    { label: "Psychologiczne", id: "Psychological" },
+    { label: "Romans", id: "Romance" },
+    { label: "Sci-Fi", id: "Sci-Fi" },
+    { label: "Okruchy Życia", id: "Slice of Life" },
+    { label: "Sportowe", id: "Sports" },
+    { label: "Nadprzyrodzone", id: "Supernatural" },
+    { label: "Thriller", id: "Thriller" }
 ];
 
 // Generowanie lat dla selecta (np. od bieżącego w dół do 1980)
@@ -75,20 +89,20 @@ export const GenresView: React.FC = () => {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {GENRES.map(genre => (
                         <button
-                            key={genre}
-                            onClick={() => setSelectedGenre(genre)}
+                            key={genre.id}
+                            onClick={() => setSelectedGenre(genre.id)}
                             style={{
                                 padding: '0.4rem 1rem',
                                 borderRadius: '20px',
-                                border: `1px solid ${selectedGenre === genre ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)'}`,
-                                background: selectedGenre === genre ? 'rgba(0, 255, 255, 0.15)' : 'transparent',
-                                color: selectedGenre === genre ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                                border: `1px solid ${selectedGenre === genre.id ? 'var(--neon-cyan)' : 'rgba(255,255,255,0.1)'}`,
+                                background: selectedGenre === genre.id ? 'rgba(0, 255, 255, 0.15)' : 'transparent',
+                                color: selectedGenre === genre.id ? 'var(--neon-cyan)' : 'var(--text-secondary)',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 fontSize: '0.9rem'
                             }}
                         >
-                            {genre}
+                            {genre.label}
                         </button>
                     ))}
                 </div>
@@ -102,7 +116,7 @@ export const GenresView: React.FC = () => {
                 <>
                     {results.length === 0 ? (
                         <div className="empty-state">
-                            <p>Nie odnaleziono anime dla gatunku "{selectedGenre}"{selectedYear !== "Wszystkie" ? ` w roku ${selectedYear}` : ''}.</p>
+                            <p>Nie odnaleziono anime dla gatunku "{GENRES.find(g => g.id === selectedGenre)?.label || selectedGenre}"{selectedYear !== "Wszystkie" ? ` w roku ${selectedYear}` : ''}.</p>
                         </div>
                     ) : (
                         <div className="anime-grid">

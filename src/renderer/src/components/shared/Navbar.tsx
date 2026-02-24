@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                 </div>
 
                 <div className="navbar-actions">
-                    <button className="nav-btn" onClick={goHome}>Home</button>
+                    <button className="nav-btn" onClick={goHome}>Główna</button>
                 </div>
             </div>
         </nav >

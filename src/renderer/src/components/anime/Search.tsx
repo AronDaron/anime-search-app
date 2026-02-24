@@ -105,7 +105,7 @@ export const Search: React.FC<SearchProps> = ({ searchQuery, isAiMode }) => {
     return (
         <div className="view-container fade-in">
             <div className="view-header">
-                <h2 className="view-title">Search Results for <span className="neon-text-purple">"{searchQuery}"</span></h2>
+                <h2 className="view-title">Wyniki wyszukiwania dla <span className="neon-text-purple">"{searchQuery}"</span></h2>
             </div>
 
             {loading && (
@@ -116,7 +116,7 @@ export const Search: React.FC<SearchProps> = ({ searchQuery, isAiMode }) => {
 
             {!loading && results.length === 0 && (
                 <div className="empty-state">
-                    <p>No anime found matching "{searchQuery}"</p>
+                    <p>Nie znaleziono anime dla: "{searchQuery}"</p>
                 </div>
             )}
 

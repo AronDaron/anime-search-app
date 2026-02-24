@@ -6,7 +6,7 @@ export const fetchAIAnimeTitles = async (description: string, apiKey: string): P
     }
 
     const payload = {
-        model: "google/gemini-2.5-flash-free", // Darmowy model z dobrym wsparciem JSON
+        model: "google/gemini-3-flash-preview", // Darmowy model z dobrym wsparciem JSON
         response_format: { type: "json_object" },
         messages: [
             {
@@ -41,5 +41,56 @@ export const fetchAIAnimeTitles = async (description: string, apiKey: string): P
     } catch (e) {
         console.error("Failed to parse AI response:", e);
         return [];
+    }
+};
+
+export const translateDescriptionToPolish = async (description: string, apiKey: string): Promise<string | null> => {
+    if (!apiKey) {
+        console.warn("Brak klucza API OpenRouter do tłumaczenia opisu.");
+        return null;
+    }
+
+    if (!description || description.trim() === '') {
+        return null;
+    }
+
+    const payload = {
+        model: "google/gemini-3-flash-preview",
+        messages: [
+            {
+                role: "system",
+                content: "Jesteś profesjonalnym tłumaczem. Przetłumacz podany angielski opis fabuły anime na perfekcyjny, naturalny język polski. ZACHOWAJ WSZYSTKIE ewentualne tagi HTML (np. <br>, <i>, <b>), jeśli są w oryginale. Zwróć WYŁĄCZNIE przetłumaczony tekst, absolutnie bez żadnych swoich dodatków, powitań ani bloków markdown."
+            },
+            {
+                role: "user",
+                content: description
+            }
+        ]
+    };
+
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(`Błąd tłumaczenia AI z OpenRouter:`, data);
+            return null;
+        }
+
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) return null;
+        
+        return content.trim();
+    } catch (e) {
+        console.error("Błąd przetwarzania odpowiedzi z API tłumacza:", e);
+        return null;
     }
 };

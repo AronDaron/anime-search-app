@@ -17,6 +17,12 @@ db.exec(`
     searchQuery TEXT PRIMARY KEY,
     searchedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS translations (
+    animeId INTEGER PRIMARY KEY,
+    description_pl TEXT NOT NULL,
+    translatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 export const addFavorite = (anime: { id: number, title: string, coverImage: string }) => {
@@ -42,4 +48,14 @@ export const addHistory = (query: string) => {
 export const getHistory = () => {
     const stmt = db.prepare('SELECT * FROM history ORDER BY searchedAt DESC LIMIT 20');
     return stmt.all();
+};
+
+export const addTranslation = (animeId: number, description_pl: string) => {
+    const stmt = db.prepare('INSERT OR REPLACE INTO translations (animeId, description_pl) VALUES (?, ?)');
+    return stmt.run(animeId, description_pl);
+};
+
+export const getTranslation = (animeId: number) => {
+    const stmt = db.prepare('SELECT description_pl FROM translations WHERE animeId = ?');
+    return stmt.get(animeId);
 };

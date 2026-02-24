@@ -10,6 +10,8 @@ declare global {
         getFavorites: () => Promise<any[]>
         addHistory: (query: string) => Promise<any>
         getHistory: () => Promise<any[]>
+        addTranslation: (animeId: number, desc: string) => Promise<any>
+        getTranslation: (animeId: number) => Promise<{ description_pl: string } | undefined>
       }
     }
   }

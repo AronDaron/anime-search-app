@@ -53,12 +53,14 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // Database IPC Handlers
-  const { addFavorite, removeFavorite, getFavorites, addHistory, getHistory } = require('./database')
+  const { addFavorite, removeFavorite, getFavorites, addHistory, getHistory, addTranslation, getTranslation } = require('./database')
   ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
   ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
   ipcMain.handle('db:getFavorites', () => getFavorites())
   ipcMain.handle('db:addHistory', (_, query) => addHistory(query))
   ipcMain.handle('db:getHistory', () => getHistory())
+  ipcMain.handle('db:addTranslation', (_, animeId, desc) => addTranslation(animeId, desc))
+  ipcMain.handle('db:getTranslation', (_, animeId) => getTranslation(animeId))
 
   createWindow()
 

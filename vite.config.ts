@@ -6,6 +6,7 @@ import { resolve } from 'path';
 export default defineConfig({
     root: 'src/renderer',
     base: './',
+    envDir: '../../', // Tell vite to look for .env in the project root, not inside src/renderer
     resolve: {
         alias: {
             '@renderer': resolve(__dirname, 'src/renderer/src')

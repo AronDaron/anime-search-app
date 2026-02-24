@@ -78,7 +78,7 @@ export const SeasonsView: React.FC = () => {
 
                 {/* Wybór roku */}
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <label style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Rok wydania:</label>
+                    <label style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Wybierz rok:</label>
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}

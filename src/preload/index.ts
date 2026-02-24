@@ -8,7 +8,9 @@ const api = {
     removeFavorite: (id: number) => ipcRenderer.invoke('db:removeFavorite', id),
     getFavorites: () => ipcRenderer.invoke('db:getFavorites'),
     addHistory: (query: string) => ipcRenderer.invoke('db:addHistory', query),
-    getHistory: () => ipcRenderer.invoke('db:getHistory')
+    getHistory: () => ipcRenderer.invoke('db:getHistory'),
+    addTranslation: (animeId: number, desc: string) => ipcRenderer.invoke('db:addTranslation', animeId, desc),
+    getTranslation: (animeId: number) => ipcRenderer.invoke('db:getTranslation', animeId)
   }
 }
 

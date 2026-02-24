@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAnimeDetails, getAnimeEpisodesFromJikan, AnimeDetailsData, JikanEpisode } from '../../api/anilist';
+import { translateDescriptionToPolish } from '../../api/ai';
 import './AnimeDetails.css';
+
+const apiToPolishGenre = (genre: string): string => {
+    const map: Record<string, string> = {
+        "Action": "Akcja", "Adventure": "Przygoda", "Comedy": "Komedia", "Drama": "Dramat",
+        "Ecchi": "Ecchi", "Fantasy": "Fantasy", "Horror": "Horror", "Mahou Shoujo": "Magiczne Dziewczyny",
+        "Mecha": "Mecha", "Music": "Muzyczne", "Mystery": "Tajemnica", "Psychological": "Psychologiczne",
+        "Romance": "Romans", "Sci-Fi": "Sci-Fi", "Slice of Life": "Okruchy Życia", "Sports": "Sportowe",
+        "Supernatural": "Nadprzyrodzone", "Thriller": "Thriller"
+    };
+    return map[genre] || genre;
+};
 
 export const AnimeDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -12,6 +24,10 @@ export const AnimeDetails: React.FC = () => {
     const [isFavorite, setIsFavorite] = useState(false);
     const [activeTab, setActiveTab] = useState<'info' | 'episodes' | 'characters' | 'stats'>('info');
 
+    // Translation states
+    const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+
     useEffect(() => {
         const fetchDetails = async () => {
             if (!id) return;
@@ -19,6 +35,46 @@ export const AnimeDetails: React.FC = () => {
             try {
                 const response = await getAnimeDetails(parseInt(id, 10));
                 setAnime(response.Media);
+
+                // Try to translate description
+                if (response.Media.description) {
+                    let cachedTranslation: string | null = null;
+                    if (window.api && window.api.db) {
+                        try {
+                            const cached = await window.api.db.getTranslation(response.Media.id);
+                            if (cached && cached.description_pl) {
+                                cachedTranslation = cached.description_pl;
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch translation from DB:", err);
+                        }
+                    }
+
+                    if (cachedTranslation) {
+                        setTranslatedDescription(cachedTranslation);
+                    } else {
+                        const apiKey = import.meta.env.VITE_OPENROUTER_KEY || '';
+                        if (apiKey) {
+                            setIsTranslating(true);
+                            translateDescriptionToPolish(response.Media.description, apiKey)
+                                .then(async (translated) => {
+                                    if (translated) {
+                                        setTranslatedDescription(translated);
+                                        // Save to DB Cache
+                                        if (window.api && window.api.db) {
+                                            try {
+                                                await window.api.db.addTranslation(response.Media.id, translated);
+                                            } catch (err) {
+                                                console.error("Failed to save translation to DB:", err);
+                                            }
+                                        }
+                                    }
+                                })
+                                .catch(err => console.error("Translation threw an error:", err))
+                                .finally(() => setIsTranslating(false));
+                        }
+                    }
+                }
 
                 // Fetch MAL episodes if anime has a mal id
                 if (response.Media.idMal) {
@@ -70,7 +126,7 @@ export const AnimeDetails: React.FC = () => {
     }
 
     if (!anime) {
-        return <div className="empty-state"><p>Anime not found.</p><button onClick={() => navigate(-1)} className="nav-btn">Back</button></div>;
+        return <div className="empty-state"><p>Nie znaleziono anime.</p><button onClick={() => navigate(-1)} className="nav-btn">Wróć</button></div>;
     }
 
     const seasons = anime.relations?.edges.filter(edge => {
@@ -85,7 +141,7 @@ export const AnimeDetails: React.FC = () => {
         <div className="anime-details-container fade-in">
             <div className="details-top-actions" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <button className="nav-btn back-btn" onClick={() => navigate(-1)} style={{ marginBottom: 0 }}>
-                    &larr; Back
+                    &larr; Wróć
                 </button>
                 <button
                     className={`nav-btn fav-btn ${isFavorite ? 'active' : ''}`}
@@ -96,7 +152,7 @@ export const AnimeDetails: React.FC = () => {
                         marginBottom: 0
                     }}
                 >
-                    {isFavorite ? '♥ Favorited' : '♡ Add to Favorites'}
+                    {isFavorite ? '♥ W ulubionych' : '♡ Dodaj do ulubionych'}
                 </button>
             </div>
             {anime.bannerImage && (
@@ -125,10 +181,10 @@ export const AnimeDetails: React.FC = () => {
                         <div className="franchise-list">
                             {/* Current Entry */}
                             <div className="franchise-item active">
-                                <span className="franchise-label">Currently viewing:</span>
+                                <span className="franchise-label">Obecnie przeglądasz:</span>
                                 <div className="anime-stats">
-                                    {anime.averageScore && <span className="stat-badge score">Score: {anime.averageScore}%</span>}
-                                    {anime.episodes && <span className="stat-badge episodes">Episodes: {anime.episodes}</span>}
+                                    {anime.averageScore && <span className="stat-badge score">Ocena: {anime.averageScore}%</span>}
+                                    {anime.episodes && <span className="stat-badge episodes">Odcinków: {anime.episodes}</span>}
                                     <span className="stat-badge format">{anime.status}</span>
                                 </div>
                             </div>
@@ -142,7 +198,7 @@ export const AnimeDetails: React.FC = () => {
                             ))}
                         </div>
                         <div className="anime-genres">
-                            {anime.genres.map(g => <span key={g} className="genre-tag">{g}</span>)}
+                            {anime.genres.map(g => <span key={g} className="genre-tag">{apiToPolishGenre(g)}</span>)}
                         </div>
                     </div>
                 </div>
@@ -150,13 +206,20 @@ export const AnimeDetails: React.FC = () => {
                 {activeTab === 'info' && (
                     <div className="tab-content fade-in-tab">
                         <div className="anime-description mt-4">
-                            <h3>Synopsis</h3>
-                            <p dangerouslySetInnerHTML={{ __html: anime.description || 'No synopsis available.' }}></p>
+                            <h3>Opis Fabuły</h3>
+                            {isTranslating ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--neon-purple)', margin: '1rem 0' }}>
+                                    <div className="neon-spinner purple" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                                    <span style={{ fontSize: '0.9rem' }}>Tłumaczenie opisu przez sztuczną inteligencję (OpenRouter)...</span>
+                                </div>
+                            ) : (
+                                <p dangerouslySetInnerHTML={{ __html: translatedDescription || anime.description || 'Brak dostępnego opisu.' }}></p>
+                            )}
                         </div>
 
                         {anime.studios?.nodes?.length > 0 && (
                             <div className="anime-studios mt-4">
-                                <h3>Studios</h3>
+                                <h3>Studia Animacji</h3>
                                 <p>{anime.studios.nodes.map(s => s.name).join(', ')}</p>
                             </div>
                         )}
@@ -216,19 +279,19 @@ export const AnimeDetails: React.FC = () => {
                             {anime.characters?.edges.map((edge, idx) => (
                                 <div key={idx} className="character-card glass-panel-inner">
                                     <div className="character-side">
-                                        <img src={edge.node.image?.large || ''} alt={edge.node.name?.full || 'Unknown'} loading="lazy" />
+                                        <img src={edge.node.image?.large || ''} alt={edge.node.name?.full || 'Nieznany'} loading="lazy" />
                                         <div className="character-details">
-                                            <span className="char-name">{edge.node.name?.full || 'Unknown'}</span>
-                                            <span className="char-role">{edge.role}</span>
+                                            <span className="char-name">{edge.node.name?.full || 'Nieznany'}</span>
+                                            <span className="char-role">{edge.role === 'MAIN' ? 'Główny' : 'Poboczny'}</span>
                                         </div>
                                     </div>
                                     {edge.voiceActors && edge.voiceActors.length > 0 && (
                                         <div className="voice-actor-side">
                                             <div className="va-details text-right">
-                                                <span className="char-name">{edge.voiceActors[0].name?.full || 'Unknown'}</span>
-                                                <span className="char-role">Japanese</span>
+                                                <span className="char-name">{edge.voiceActors[0].name?.full || 'Nieznany'}</span>
+                                                <span className="char-role">Japoński</span>
                                             </div>
-                                            <img src={edge.voiceActors[0].image?.large || ''} alt={edge.voiceActors[0].name?.full || 'Unknown'} loading="lazy" />
+                                            <img src={edge.voiceActors[0].image?.large || ''} alt={edge.voiceActors[0].name?.full || 'Nieznany'} loading="lazy" />
                                         </div>
                                     )}
                                 </div>

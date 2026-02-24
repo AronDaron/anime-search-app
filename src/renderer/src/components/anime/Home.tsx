@@ -36,7 +36,7 @@ export const Home: React.FC = () => {
     return (
         <div className="view-container">
             <div className="view-header">
-                <h2 className="view-title">Trending <span className="neon-text-cyan">Now</span></h2>
+                <h2 className="view-title">Popularne <span className="neon-text-cyan">Teraz</span></h2>
             </div>
 
             <div className="anime-grid">
