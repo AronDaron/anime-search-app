@@ -254,26 +254,39 @@
     border-radius: 3px;
 }
 
+.episode-item-container {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.episode-item-container:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
 .episode-item {
     display: flex;
     gap: 1rem;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
     padding: 0.8rem;
-    transition: background 0.2s ease, transform 0.2s ease;
-    border: 1px solid transparent;
+    transition: all 0.2s ease;
 }
 
-.episode-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateX(5px);
-    border-color: rgba(255, 255, 255, 0.1);
+.episode-item.expanded {
+    background: rgba(0, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.1);
 }
 
 .episode-thumbnail-container {
     position: relative;
     width: 160px;
     height: 90px;
+    min-height: 90px;
     flex-shrink: 0;
     border-radius: 4px;
     overflow: hidden;
@@ -620,4 +633,110 @@
     padding: 3rem;
     color: var(--text-secondary);
     font-size: 1.1rem;
+}
+
+/* Episode Links Hub Section */
+.episode-links-panel {
+    padding: 1.2rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.episode-links-panel h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--neon-cyan);
+    font-weight: 500;
+}
+
+.external-links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.link-group h5 {
+    margin: 0 0 0.6rem 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.link-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.neon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.btn-animezone {
+    color: #fff;
+    background: rgba(30, 144, 255, 0.15);
+    border-color: rgba(30, 144, 255, 0.4);
+}
+
+.btn-animezone:hover {
+    background: rgba(30, 144, 255, 0.3);
+    box-shadow: 0 0 12px rgba(30, 144, 255, 0.5);
+}
+
+.btn-desu {
+    color: #fff;
+    background: rgba(50, 205, 50, 0.15);
+    border-color: rgba(50, 205, 50, 0.4);
+}
+
+.btn-desu:hover {
+    background: rgba(50, 205, 50, 0.3);
+    box-shadow: 0 0 12px rgba(50, 205, 50, 0.5);
+}
+
+.btn-shinden {
+    color: #fff;
+    background: rgba(138, 43, 226, 0.15);
+    border-color: rgba(138, 43, 226, 0.4);
+}
+
+.btn-shinden:hover {
+    background: rgba(138, 43, 226, 0.3);
+    box-shadow: 0 0 12px rgba(138, 43, 226, 0.5);
+}
+
+.btn-official {
+    color: #fff;
+    background: rgba(255, 140, 0, 0.15);
+    border-color: rgba(255, 140, 0, 0.4);
+}
+
+.btn-official:hover {
+    background: rgba(255, 140, 0, 0.3);
+    box-shadow: 0 0 12px rgba(255, 140, 0, 0.5);
+}
+
+.fade-in-down {
+    animation: fadeInDown 0.25s ease-out forwards;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

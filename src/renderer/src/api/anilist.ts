@@ -241,6 +241,12 @@ export interface AnimeDetailsData {
         }
       }[]
     };
+    externalLinks: {
+      url: string;
+      site: string;
+      type: string;
+      language: string | null;
+    }[];
     streamingEpisodes: {
       title: string;
       thumbnail: string;
@@ -326,6 +332,12 @@ query ($id: Int) {
           }
         }
       }
+    }
+    externalLinks {
+      url
+      site
+      type
+      language
     }
     streamingEpisodes {
       title

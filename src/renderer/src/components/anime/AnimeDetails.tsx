@@ -23,6 +23,11 @@ export const AnimeDetails: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
     const [activeTab, setActiveTab] = useState<'info' | 'episodes' | 'characters' | 'stats'>('info');
+    const [expandedEpisodeIndex, setExpandedEpisodeIndex] = useState<number | null>(null);
+
+    const generateSlug = (title: string) => {
+        return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    };
 
     // Translation states
     const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
@@ -265,32 +270,91 @@ export const AnimeDetails: React.FC = () => {
                                     <div className="anime-episodes glass-panel-inner mt-4">
                                         <h3>Lista Odcinków ({episodesList.length})</h3>
                                         <div className="episodes-list">
-                                            {episodesList.map((ep, index) => (
-                                                <div key={index} className="episode-item">
-                                                    <div className="episode-thumbnail-container">
-                                                        <img src={ep.thumbnail} alt={ep.title} className="episode-thumbnail" loading="lazy" referrerPolicy="no-referrer" />
-                                                        <div className="episode-play-overlay">
-                                                            <a href={ep.url} target="_blank" rel="noopener noreferrer">▶</a>
-                                                        </div>
-                                                    </div>
-                                                    <div className="episode-info">
-                                                        <h4>{ep.title}</h4>
-                                                        <div className="episode-meta">
-                                                            <span className="platform-tag">{ep.site}</span>
-                                                            {ep.rating && ep.rating > 0 ? (
-                                                                <div className="rating-circle">
-                                                                    <span className="rating-star">★</span>
-                                                                    <span className="rating-number">{(ep.rating * 2).toFixed(1)}</span>
+                                            {episodesList.map((ep, index) => {
+                                                // Polish sites usually use romaji (Japanese) titles in their slugs rather than English ones
+                                                const animeTitleRomaji = anime.title.romaji || anime.title.english || '';
+                                                const animeTitleEnglishOrRomaji = anime.title.english || anime.title.romaji || '';
+
+                                                const slug = generateSlug(animeTitleRomaji);
+                                                const searchTitle = animeTitleEnglishOrRomaji;
+
+                                                const episodeNumber = index + 1;
+                                                const isExpanded = expandedEpisodeIndex === index;
+
+                                                const officialStreams = anime.externalLinks?.filter(link => link.type === 'STREAM' || link.type === 'INFO') || [];
+
+                                                // Create a list of unique official streaming links to avoid duplicates with the base ep.site
+                                                const uniqueOfficialStreams = officialStreams.filter(link => link.site !== ep.site && link.url !== ep.url);
+
+                                                return (
+                                                    <div key={index} className="episode-item-container">
+                                                        <div className={`episode-item clickable ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedEpisodeIndex(isExpanded ? null : index)}>
+                                                            <div className="episode-thumbnail-container">
+                                                                <img src={ep.thumbnail} alt={ep.title} className="episode-thumbnail" loading="lazy" referrerPolicy="no-referrer" />
+                                                                <div className="episode-play-overlay">
+                                                                    <span>{isExpanded ? '▲' : '▼'}</span>
                                                                 </div>
-                                                            ) : (
-                                                                <div className="rating-circle empty">
-                                                                    <span className="rating-number">N/A</span>
+                                                            </div>
+                                                            <div className="episode-info">
+                                                                <h4>{ep.title}</h4>
+                                                                <div className="episode-meta">
+                                                                    <span className="platform-tag">{ep.site}</span>
+                                                                    {ep.rating && ep.rating > 0 ? (
+                                                                        <div className="rating-circle">
+                                                                            <span className="rating-star">★</span>
+                                                                            <span className="rating-number">{(ep.rating * 2).toFixed(1)}</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="rating-circle empty">
+                                                                            <span className="rating-number">N/A</span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            )}
+                                                            </div>
                                                         </div>
+
+                                                        {isExpanded && (
+                                                            <div className="episode-links-panel fade-in-down">
+                                                                <h4>Gdzie obejrzeć ten odcinek?</h4>
+                                                                <div className="external-links-grid">
+                                                                    <div className="link-group">
+                                                                        <h5>Polskie serwisy:</h5>
+                                                                        <div className="link-buttons">
+                                                                            <a className="neon-btn btn-animezone" href={`https://www.animezone.pl/odcinek/${slug}/${episodeNumber}`} target="_blank" rel="noopener noreferrer">
+                                                                                AnimeZone
+                                                                            </a>
+                                                                            <a className="neon-btn btn-desu" href={`https://desu-online.pl/${slug}-odcinek-${episodeNumber}/`} target="_blank" rel="noopener noreferrer">
+                                                                                Desu-Online
+                                                                            </a>
+                                                                            <a className="neon-btn btn-shinden" href={`https://shinden.pl/search?q=${encodeURIComponent(searchTitle)}`} target="_blank" rel="noopener noreferrer">
+                                                                                Shinden
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {(uniqueOfficialStreams.length > 0 || ep.url) && (
+                                                                        <div className="link-group">
+                                                                            <h5>Oficjalne / Zagraniczne:</h5>
+                                                                            <div className="link-buttons">
+                                                                                {ep.site && ep.url && (
+                                                                                    <a className="neon-btn btn-official" href={ep.url} target="_blank" rel="noopener noreferrer">
+                                                                                        {ep.site}
+                                                                                    </a>
+                                                                                )}
+                                                                                {uniqueOfficialStreams.map((link, lIndex) => (
+                                                                                    <a key={lIndex} className="neon-btn btn-official" href={link.url} target="_blank" rel="noopener noreferrer">
+                                                                                        {link.site}
+                                                                                    </a>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 );
