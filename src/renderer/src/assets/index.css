@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Core Colors */
+  --bg-deep: #0a0a0f;
+  --bg-surface: #13131a;
+  --bg-surface-elevated: #1a1a24;
+
+  /* Accents */
+  --accent-cyan: #00f3ff;
+  --accent-purple: #b535f6;
+  --accent-pink: #ff2a85;
+  --accent-red: #ff3333;
+  --accent-green: #33ff33;
+
+  /* Text */
+  --text-main: #f0f0f5;
+  --text-muted: #8b8b9e;
+
+  /* Effects */
+  --glow-cyan: 0 0 20px rgba(0, 243, 255, 0.4);
+  --glow-purple: 0 0 20px rgba(181, 53, 246, 0.4);
+  --glow-red: 0 0 20px rgba(255, 51, 51, 0.4);
+  --glow-green: 0 0 20px rgba(51, 255, 51, 0.4);
+  --glass-bg: rgba(19, 19, 26, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+
+  /* Measurements */
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --header-height: 80px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* FireFox Support & W3C Standard fallback */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(181, 53, 246, 0.4) rgba(10, 10, 15, 0.4);
+}
+
+/* Custom Scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 15, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(181, 53, 246, 0.3);
+  border-radius: 4px;
+  border: 1px solid rgba(181, 53, 246, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(181, 53, 246, 0.6);
+  box-shadow: 0 0 10px rgba(181, 53, 246, 0.5);
+}
+
+/* Glass panel utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Neon text utility */
+.neon-text-cyan {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.neon-text-purple {
+  color: var(--accent-purple);
+  text-shadow: 0 0 10px rgba(181, 53, 246, 0.5);
+}
+
+.neon-text-red {
+  color: var(--accent-red);
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+}
+
+.neon-text-green {
+  color: var(--accent-green);
+  text-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+}
+
+/* Base button reset */
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+input {
+  font-family: inherit;
+}
