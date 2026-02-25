@@ -24,6 +24,14 @@ export interface AnimeMedia {
   description: string | null;
 }
 
+export interface AiringScheduleEdge {
+  id: number;
+  airingAt: number;
+  timeUntilAiring: number;
+  episode: number;
+  media: AnimeMedia;
+}
+
 export interface PageData {
   Page: {
     pageInfo: {
@@ -33,6 +41,7 @@ export interface PageData {
       hasNextPage: boolean;
     };
     media: AnimeMedia[];
+    airingSchedules?: AiringScheduleEdge[];
   };
 }
 
@@ -145,6 +154,43 @@ export const searchAnime = async (
   if (tags && tags.length > 0) variables.tag_in = tags;
 
   return fetchAniList<PageData>(SEARCH_ANIME_QUERY, variables);
+};
+
+const AIRING_SCHEDULE_QUERY = `
+query ($page: Int, $perPage: Int, $notYetAired: Boolean) {
+  Page (page: $page, perPage: $perPage) {
+    pageInfo {
+      total
+      currentPage
+      lastPage
+      hasNextPage
+    }
+    airingSchedules (notYetAired: $notYetAired, sort: TIME) {
+      id
+      airingAt
+      timeUntilAiring
+      episode
+      media {
+        id
+        title {
+          romaji
+          english
+        }
+        coverImage {
+          extraLarge
+        }
+        averageScore
+        seasonYear
+        episodes
+        description
+      }
+    }
+  }
+}
+`;
+
+export const getAiringSchedule = async (page = 1, perPage = 15) => {
+  return fetchAniList<PageData>(AIRING_SCHEDULE_QUERY, { page, perPage, notYetAired: true });
 };
 
 const SEARCH_BY_TITLE_EXACT_QUERY = `

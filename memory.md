@@ -47,11 +47,11 @@ Miejsce gdzie znajdują się absolutnie wszystkie pliki wyświetlane użytkownik
 
 #### Zmienne, Kolory i Główne Komponenty Aplikacji
 - `index.css`: Główny plik resetu. Na poziomie globalnym wymusza wsparcie Dark-Theme. Posiada wdrożone kolory zmiennych (CSS variables) gotowe do wsparcia hubów: Anime (Cyan), Seriale (Purple), Filmy (Red), Gry (Green).
-- `Navbar.tsx` / `Navbar.css` (`src/renderer/src/components/shared/`): Interaktywny pasek ze wsparciem menu rozwijanego (dropdown) dla zmian modułów popkultury. Posiada obok wyszukiwarkę tekstową, klasyczny zaawansowany lejek z filtrami ("🔍 Wyszukiwanie") oraz inteligentny przycisk "🧠 Wyszukiwanie AI". Towarzyszą mu tagowe pod-moduły "Gatunki" i "Sezony".
+- `Navbar.tsx` / `Navbar.css` (`src/renderer/src/components/shared/`): Interaktywny pasek ze wsparciem menu rozwijanego (dropdown) dla zmian modułów popkultury. Posiada obok wyszukiwarkę tekstową, klasyczny zaawansowany lejek z filtrami ("Wyszukiwanie") oraz inteligentny przycisk "Wyszukiwanie AI". Przyciski funkcyjne na pasku wystylizowane są z pomocą wyraźnych 4-pikselowych neonowych obramowań odpornych na łamanie wierszy. Towarzyszą im tagowe pod-moduły "Gatunki" i "Sezony".
 - `PlaceholderSection.tsx` (`src/renderer/src/components/shared/`): Uniwersalny, adaptatywny wizualnie komponent używany jako atrapa do podglądu ścieżek `movies`, `series` i `games`, przed wdrożeniem finalnego kodu dla tych subsekcji.
 
 #### Komponenty Modułu Anime (`src/renderer/src/components/anime/`)
-- `Home.tsx`: Strona główna witająca użytkownika ładująca popularne anime.
+- `Home.tsx` / `Home.css`: Pulpit domowy witający użytkownika podzielony elastycznym gridem/flexem na asymetryczne kolumny. Po lewej (z łamaniem boksów) renderuje siatki `NeonCard` najpopularniejszych animacji. Po prawej znajduje się "Kalendarz Premier" – pobrany w locie za pomocą `Promise.all` harmonogram wychodzących dzisiaj/jutro odcinków wraz z odliczającym licznikiem czasowym dla łatwej weryfikacji przez kliknięcie.
 - `Search.tsx`: Strona obsługująca wyszukiwanie po tytule wyciągana komendą Enter z nawigacji głównej.
 - `FilterSearchView.tsx` / `FilterSearchView.css` [NOWE]: Główny, zaawansowany panel filtra ("Wyszukiwanie"). Posiada boczny pasek opcji pozwalający łączyć dziesiątki gatunków, sezony i lata emisji w jedno konkretne żądanie do bazy `searchAnime()` obsługiwane bez udziału AI.
 - `AISearchView.tsx` / `AISearchView.css`: Dedykowany, futurystyczny interfejs dla asystenta sztucznej inteligencji. Wystylizowany za pomocą dedykowanych klas CSS przypominających konsolę.
