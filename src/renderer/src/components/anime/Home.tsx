@@ -58,7 +58,7 @@ export const Home: React.FC = () => {
             {/* Lewa Kolumna: Popularne */}
             <div className="home-main-content">
                 <div className="view-header">
-                    <h2 className="view-title">Popularne <span className="neon-text-cyan">Teraz</span></h2>
+                    <h2 className="view-title">Trendujące <span className="neon-text-cyan">(30 Dni)</span></h2>
                 </div>
 
                 <div className="anime-grid">

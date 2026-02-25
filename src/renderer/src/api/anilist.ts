@@ -84,7 +84,7 @@ query ($page: Int, $perPage: Int) {
       lastPage
       hasNextPage
     }
-    media (type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
+    media (type: ANIME, sort: TRENDING_DESC, isAdult: false) {
       id
       title {
         romaji
