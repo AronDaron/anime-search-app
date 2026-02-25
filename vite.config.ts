@@ -27,6 +27,11 @@ export default defineConfig({
         target: 'https://store.steampowered.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/steam-store/, '')
+      },
+      '/steamspy': {
+        target: 'https://steamspy.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/steamspy/, '')
       }
     }
   }

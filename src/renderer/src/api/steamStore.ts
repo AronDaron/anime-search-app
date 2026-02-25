@@ -147,16 +147,15 @@ export const searchSteamGamesByGenre = async (
     // Ograniczamy i mapujemy to z grubsza na nasz potrzebny interfejs,
     // ponieważ SteamSpy nie ma wszystkich obrazków zduplikowanych jak endpoint featured,
     // zbudujemy adresy ręcznie
-    if (response && typeof response === 'object') {
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
       const items: SteamFeaturedCategoryItem[] = Object.values(response)
-        .slice(0, 30) // ograniczenie by nie wyświetlić tysiąca w renderze
+        .filter((g: any) => g && g.appid) // Filtruj tylko poprawne obiekty gier
+        .slice(0, 30)
         .map((spyGame: any) => {
-          const finalPriceCents = (spyGame.price || 0)
-          const discountPercent = spyGame.discount || 0
-          // Odwrócenie równania procentowego by wyliczyć (zawsze mniej więcej) cenę bazową w centach
-          const originalPriceCents = discountPercent > 0 
-              ? Math.round(finalPriceCents / (1 - (discountPercent / 100))) 
-              : finalPriceCents
+          const finalPriceCents = Number(spyGame.price || 0)
+          const discountPercent = Number(spyGame.discount || 0)
+          // Cena bazowa
+          const originalPriceCents = Number(spyGame.initialprice || finalPriceCents)
 
           return {
             id: parseInt(spyGame.appid),
@@ -167,13 +166,13 @@ export const searchSteamGamesByGenre = async (
             original_price: originalPriceCents,
             final_price: finalPriceCents,
             currency: 'USD', // Steamspy defaultowo zwraca centy $
-            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_616x353.jpg`,
-            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            large_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
             windows_available: true,
             mac_available: false,
             linux_available: false,
             streamingvideo_available: false,
-            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
+            header_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`
           } as SteamFeaturedCategoryItem
         })
 
@@ -184,6 +183,66 @@ export const searchSteamGamesByGenre = async (
     return []
   } catch (e) {
     console.error(`Błąd podczas wyszukiwania gier z gatunku ${genre}:`, e)
+    return []
+  }
+}
+
+export interface SteamSearchResponse {
+  total: number
+  items: {
+    id: number
+    name: string
+    tiny_image: string
+    short_description: string
+    price?: {
+      currency: string
+      initial: number
+      final: number
+      discount_percent: number
+      final_formatted: string
+    }
+    platforms: {
+      windows: boolean
+      mac: boolean
+      linux: boolean
+    }
+    streamingvideo_available: boolean
+    header_image: string
+  }[]
+}
+
+/**
+ * Przeszukuje sklep Steam po tytule.
+ */
+export const searchSteamGames = async (query: string): Promise<SteamFeaturedCategoryItem[]> => {
+  try {
+    const url = `https://store.steampowered.com/api/storesearch/`
+    // cc=PL dla cen w zł, l=polish dla języka
+    const response = await fetchSteamData(url, { term: query, l: 'polish', cc: 'PL' })
+
+    if (response && response.items) {
+      return response.items.map((item: any) => ({
+        id: item.id,
+        type: 0,
+        name: item.name,
+        discounted: !!item.price, 
+        discount_percent: item.price?.discount_percent || 0,
+        original_price: item.price?.initial || 0,
+        final_price: item.price?.final || 0,
+        currency: 'PLN',
+        large_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+        small_capsule_image: item.tiny_image,
+        windows_available: item.platforms?.windows || true,
+        mac_available: item.platforms?.mac || false,
+        linux_available: item.platforms?.linux || false,
+        streamingvideo_available: false,
+        header_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`
+      })) as SteamFeaturedCategoryItem[]
+    }
+
+    return []
+  } catch (e) {
+    console.error(`Błąd podczas wyszukiwania gier dla zapytania "${query}":`, e)
     return []
   }
 }

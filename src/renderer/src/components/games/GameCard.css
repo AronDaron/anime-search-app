@@ -21,10 +21,54 @@
 }
 
 .game-card-image-wrapper {
-  aspect-ratio: 16/9;
+  aspect-ratio: 460 / 215;
   width: 100%;
   overflow: hidden;
   position: relative;
+  background-color: #0d0d0d;
+}
+
+.game-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+  position: relative;
+}
+
+.game-card-placeholder::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 128, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 128, 255, 0.05) 0%, transparent 50%);
+}
+
+.placeholder-content {
+  padding: 1.5rem;
+  text-align: center;
+  z-index: 1;
+}
+
+.placeholder-content span {
+  color: #888;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.4;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 0 10px rgba(0, 255, 128, 0.1);
 }
 
 .game-card-image {

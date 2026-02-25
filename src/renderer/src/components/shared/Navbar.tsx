@@ -146,6 +146,13 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
           ) : (
             <>
               <button
+                className={`nav-btn ${path === '/games/filter-search' ? 'active' : ''}`}
+                onClick={() => navigate('/games/filter-search')}
+                title="ZAAWANSOWANE WYSZUKIWANIE"
+              >
+                Wyszukiwanie
+              </button>
+              <button
                 className={`nav-btn ${path === '/games/bestsellers' ? 'active' : ''}`}
                 onClick={() => navigate('/games/bestsellers')}
               >

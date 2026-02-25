@@ -12,6 +12,8 @@ import { AISearchView } from './views/AISearchView'
 import { GamesHome } from './components/games/GamesHome'
 import { GameGenresView } from './components/games/GameGenresView'
 import { GameDetails } from './components/games/GameDetails'
+import { GameSearch } from './components/games/GameSearch'
+import { GameFilterSearchView } from './components/games/GameFilterSearchView'
 import './assets/index.css'
 
 // Force TS server refresh
@@ -52,11 +54,21 @@ function App(): React.JSX.Element {
           <Route path="/anime/filter-search" element={<FilterSearchView />} />
           <Route path="/anime/ai-search" element={<AISearchView domain="anime" />} />
 
-          <Route path="/games" element={<GamesHome />} />
+          <Route
+            path="/games"
+            element={
+              searchQuery.trim().length > 0 ? (
+                <GameSearch searchQuery={searchQuery} />
+              ) : (
+                <GamesHome />
+              )
+            }
+          />
           <Route path="/games/ai-search" element={<AISearchView domain="games" />} />
           <Route path="/games/bestsellers" element={<GamesHome title="Bestsellery Gier" />} />
           <Route path="/games/deals" element={<GamesHome title="Promocje Steam" />} />
           <Route path="/games/genres" element={<GameGenresView />} />
+          <Route path="/games/filter-search" element={<GameFilterSearchView />} />
           <Route path="/games/new" element={<GamesHome title="Nowości na Steam" />} />
           {/* Dynamic route must be last in the /games group */}
           <Route path="/games/:id" element={<GameDetails />} />

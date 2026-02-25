@@ -13,12 +13,10 @@ export const fetchSteamData = async (endpointUrl: string, params: Record<string,
   const urlObj = new URL(endpointUrl)
   Object.keys(params).forEach((key) => urlObj.searchParams.append(key, params[key]))
 
-  // MIEJSCE NA KLUCZ API:
-  // Większość darmowych funkcji sklepu Steama (ceny, opisy) NIE wymaga klucza API!
-  // Jeśli będziesz używać endpointów ze Steam Web API (np. IPlayerService), odkomentuj linię poniżej
-  // i dodaj zmienną VITE_STEAM_API_KEY do swojego pliku .env.local
-  //
-  urlObj.searchParams.append('key', import.meta.env.VITE_STEAM_API_KEY || '')
+  const steamKey = import.meta.env.VITE_STEAM_API_KEY
+  if (steamKey) {
+    urlObj.searchParams.append('key', steamKey)
+  }
 
   const fullUrl = urlObj.toString()
 
@@ -30,7 +28,9 @@ export const fetchSteamData = async (endpointUrl: string, params: Record<string,
   // Jeśli to wersja w przeglądarce używająca serwera na Proxmoxie
   else {
     // Zamieniamy główną domenę na prefix proxy, który zadeklarowaliśmy w `vite.config.ts`
-    const proxyUrl = fullUrl.replace(STEAM_STORE_URL, '/steam-store')
+    const proxyUrl = fullUrl
+      .replace(STEAM_STORE_URL, '/steam-store')
+      .replace('https://steamspy.com', '/steamspy')
     console.log('[SteamAPI] Pobieranie przez Vite Proxy:', proxyUrl)
 
     const response = await fetch(proxyUrl)

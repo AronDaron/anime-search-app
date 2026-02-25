@@ -20,6 +20,8 @@ interface GameCardProps {
 }
 
 export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
+  const [imgError, setImgError] = React.useState(false)
+
   // Formatowanie ceny na lokację polską (zł)
   const formatPrice = (p: number) => {
     if (p === 0) return 'Free to Play'
@@ -34,7 +36,33 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
       transition={{ type: 'spring', stiffness: 300 }}
     >
       <div className="game-card-image-wrapper">
-        <img src={game.capsuleImage} alt={game.title} className="game-card-image" loading="lazy" />
+        {!imgError ? (
+          <img
+            src={game.capsuleImage}
+            alt={game.title}
+            className="game-card-image"
+            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              // Próbujemy różnych wariantów zanim się poddamy
+              if (target.src.includes('header.jpg')) {
+                // Jeśli header nie działa, spróbuj capsule_616x353 (rzadsze ale bywa)
+                target.src = target.src.replace('header.jpg', 'capsule_616x353.jpg')
+              } else if (target.src.includes('capsule_616x353.jpg')) {
+                // Ostateczna próba: mały obrazek
+                target.src = target.src.replace('capsule_616x353.jpg', 'capsule_184x69.jpg')
+              } else {
+                setImgError(true)
+              }
+            }}
+          />
+        ) : (
+          <div className="game-card-placeholder">
+            <div className="placeholder-content">
+              <span>{game.title}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="game-card-content">

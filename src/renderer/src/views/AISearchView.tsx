@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, Sparkles, SlidersHorizontal, Search, AlertCircle } from 'lucide-react'
 import { fetchAIAnimeTitles, AISearchResult } from '../api/ai'
 import { getAnimeByExactTitle, searchAnime, AnimeMedia } from '../api/anilist'
+import { searchSteamGames } from '../api/steamStore'
 import { NeonCard } from '../components/shared/NeonCard'
 import './AISearchView.css'
 import '../components/shared/Grid.css'
@@ -71,14 +72,23 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
           const validAnimes = titleResponses.filter((item): item is AnimeMedia => item !== null)
           combinedResults = [...validAnimes]
         } else {
-          // Czekając na Krok 3 (SteamAPI) - wkładamy mocki z samym tytułem
-          combinedResults = aiResult.titles.map(
-            (t) =>
+          // Pobieramy dane ze Steam dla każdego tytułu AI
+          const gamePromises = aiResult.titles.map((title) => searchSteamGames(title))
+          const gameResponses = await Promise.all(gamePromises)
+
+          const validGames = gameResponses
+            .map((res) => (res && res.length > 0 ? res[0] : null))
+            .filter((item): item is any => item !== null)
+
+          combinedResults = validGames.map(
+            (g) =>
               ({
-                id: Math.random() * 1000000,
-                title: { romaji: t, english: t, native: t },
-                coverImage: { extraLarge: '', large: '', medium: '', color: '' },
-                startDate: { year: 2024, month: 1, day: 1 }
+                id: g.id,
+                title: { romaji: g.name, english: g.name, native: g.name },
+                coverImage: { extraLarge: g.large_capsule_image, large: g.large_capsule_image, medium: g.small_capsule_image, color: '' },
+                averageScore: 0,
+                seasonYear: 0,
+                episodes: 0
               }) as unknown as AnimeMedia
           )
         }
@@ -143,12 +153,23 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
         <div className="ai-icon-wrapper">
           <Bot size={48} />
         </div>
-        <h1 className="ai-title">Neon AI Search</h1>
+        <h1 className="ai-title">Neon AI {domain === 'games' ? 'Game' : 'Anime'} Search</h1>
         <p className="ai-subtitle">
-          Opisz anime, którego szukasz (np.{' '}
-          <span className="highlight-pink">"Wampiry i akcja z lat 90"</span> lub{' '}
-          <span className="highlight-cyan">"Nowość o magii ze świetną animacją"</span>). Sztuczna
-          inteligencja przeanalizuje Twoje zapytanie i przeszuka bazę danych.
+          {domain === 'games' ? (
+            <>
+              Opisz grę, której szukasz (np.{' '}
+              <span className="highlight-cyan">"Dynamiczny RPG w świecie cyberpunka"</span> lub{' '}
+              <span className="highlight-pink">"Relaksująca gra o budowaniu farmy"</span>). Sztuczna
+              inteligencja przeanalizuje Twoje zapytanie i przeszuka bazę Steam.
+            </>
+          ) : (
+            <>
+              Opisz anime, którego szukasz (np.{' '}
+              <span className="highlight-pink">"Wampiry i akcja z lat 90"</span> lub{' '}
+              <span className="highlight-cyan">"Nowość o magii ze świetną animacją"</span>). Sztuczna
+              inteligencja przeanalizuje Twoje zapytanie i przeszuka bazę danych.
+            </>
+          )}
         </p>
       </div>
 
@@ -159,7 +180,11 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Np. Głównego bohatera reinkarnuje do świata fantasy jako najsilniejszy szlam..."
+                placeholder={
+                  domain === 'games'
+                    ? 'Np. RPG akcji z otwartym światem, gdzie walczymy z potworami w mrocznym fantasy...'
+                    : 'Np. Głównego bohatera reinkarnuje do świata fantasy jako najsilniejszy szlam...'
+                }
                 className="ai-textarea"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -189,7 +214,7 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
                 {isSearching ? (
                   <>
                     <div
-                      className="neon-spinner purple"
+                      className={`neon-spinner ${domain === 'games' ? 'green' : 'purple'}`}
                       style={{ width: '20px', height: '20px', borderWidth: '2px' }}
                     ></div>
                     <span>Analizowanie...</span>
@@ -225,20 +250,22 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
                         AI zignoruje rok z tekstu, jeśli to wypełnisz.
                       </p>
                     </div>
-                    <div className="ai-filter-group">
-                      <label className="ai-filter-label">Wymuś Sezon (Opcjonalnie)</label>
-                      <select
-                        value={manualSeason}
-                        onChange={(e) => setManualSeason(e.target.value)}
-                        className="ai-filter-select"
-                      >
-                        <option value="">Wszystkie (Zgadywane przez AI)</option>
-                        <option value="WINTER">Zima</option>
-                        <option value="SPRING">Wiosna</option>
-                        <option value="SUMMER">Lato</option>
-                        <option value="FALL">Jesień</option>
-                      </select>
-                    </div>
+                    {domain === 'anime' && (
+                      <div className="ai-filter-group">
+                        <label className="ai-filter-label">Wymuś Sezon (Opcjonalnie)</label>
+                        <select
+                          value={manualSeason}
+                          onChange={(e) => setManualSeason(e.target.value)}
+                          className="ai-filter-select"
+                        >
+                          <option value="">Wszystkie (Zgadywane przez AI)</option>
+                          <option value="WINTER">Zima</option>
+                          <option value="SPRING">Wiosna</option>
+                          <option value="SUMMER">Lato</option>
+                          <option value="FALL">Jesień</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -290,7 +317,7 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
                   seasonYear: anime.seasonYear || undefined,
                   episodes: anime.episodes || undefined
                 }}
-                onClick={() => navigate(`/anime/${anime.id}`)}
+                onClick={() => navigate(`/${domain === 'games' ? 'games' : 'anime'}/${anime.id}`)}
               />
             ))}
           </div>
