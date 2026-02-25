@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameCard, GameData } from './GameCard'
+import { getSteamFeaturedCategories, SteamFeaturedCategoryItem } from '../../api/steamStore'
 import './GamesHome.css'
 
 export interface GamesHomeProps {
@@ -13,25 +14,59 @@ export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyró�
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        setIsLoading(true);
-        // Docelowo tutaj będzie pobierane ze Steam API
-        // Ponieważ nie mamy jeszcze gotowego endpointu polecanych/trending ze Steam, uzywamy mockow prezentacyjnych
-        const mockSteamGames: GameData[] = [
-            { id: '1091500', title: 'Cyberpunk 2077', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1091500/capsule_616x353.jpg', price: 99.50, originalPrice: 199.00, discountPercent: 50, tags: ['Cyberpunk', 'RPG', 'Sci-fi'], osWindows: true },
-            { id: '1086940', title: 'Baldur\'s Gate 3', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/capsule_616x353.jpg', price: 249.00, tags: ['CRPG', 'Story Rich', 'Choices Matter'], osWindows: true },
-            { id: '323190', title: 'Frostpunk', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/323190/capsule_616x353.jpg', price: 21.99, originalPrice: 109.99, discountPercent: 80, tags: ['City Builder', 'Survival', 'Strategy'], osWindows: true },
-            { id: '236390', title: 'War Thunder', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/236390/capsule_616x353.jpg', price: 0, tags: ['Free to Play', 'Vehicular Combat', 'VR'], osWindows: true },
-            { id: '1172470', title: 'Apex Legends', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1172470/capsule_616x353.jpg', price: 0, tags: ['Free to Play', 'Battle Royale', 'Hero Shooter'], osWindows: true },
-            { id: '271590', title: 'Grand Theft Auto V', capsuleImage: 'https://cdn.akamai.steamstatic.com/steam/apps/271590/capsule_616x353.jpg', price: 63.90, originalPrice: 142.00, discountPercent: 55, tags: ['Open World', 'Action', 'Multiplayer'], osWindows: true },
-        ];
+        let isMounted = true;
+        const fetchGames = async () => {
+            setIsLoading(true);
+            try {
+                const categories = await getSteamFeaturedCategories();
+                if (!categories || !isMounted) return;
 
-        // Symulacja ładowania i prosty shuffle tablicy by markować różne kategorie na próbę!
-        const shuffled = [...mockSteamGames].sort(() => 0.5 - Math.random());
+                let selectedItems: SteamFeaturedCategoryItem[] = [];
 
-        setTimeout(() => {
-            setGames(title === 'Promocje Steam' ? shuffled.filter(g => g.discountPercent) : shuffled);
-            setIsLoading(false);
-        }, 500);
+                if (title === 'Bestsellery Gier') {
+                    selectedItems = categories.top_sellers?.items || [];
+                } else if (title === 'Promocje Steam') {
+                    selectedItems = categories.specials?.items || [];
+                } else if (title === 'Nowości na Steam') {
+                    selectedItems = categories.new_releases?.items || [];
+                } else {
+                    // Domyślnie na stronie głównej gier miksujemy duże nagłówki z bestsellerami
+                    const topItems = categories.top_sellers?.items?.slice(0, 10) || [];
+
+                    // Fallback to various popular sections if '0' is missing
+                    const featureItems = categories['0']?.items || categories.large_capsules?.items || [];
+                    selectedItems = [...featureItems, ...topItems];
+                }
+
+                // Globalne usunięcie duplikatów i uszkodzonych ofert bez ID, by zapobiec usterką w kluczach i renderowaniu 
+                const uniqueItems = selectedItems.filter(
+                    (item, index, self) => item?.id && index === self.findIndex((t) => t?.id === item?.id)
+                );
+
+                const mappedGames: GameData[] = uniqueItems.map(item => ({
+                    id: item.id.toString(),
+                    title: item.name || 'Nieznany Tytuł',
+                    capsuleImage: item.large_capsule_image || item.small_capsule_image || item.header_image || '',
+                    price: item.final_price ? item.final_price / 100 : 0,
+                    originalPrice: item.original_price ? item.original_price / 100 : undefined,
+                    discountPercent: item.discount_percent || 0,
+                    tags: [], // Tags not available in featured categories summary
+                    osWindows: item.windows_available ?? true,
+                }));
+
+                setGames(mappedGames);
+            } catch (error) {
+                console.error("Failed to load featured categories:", error);
+            } finally {
+                if (isMounted) setIsLoading(false);
+            }
+        };
+
+        fetchGames();
+
+        return () => {
+            isMounted = false;
+        };
     }, [title]);
 
     return (

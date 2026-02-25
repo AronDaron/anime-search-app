@@ -9,8 +9,8 @@ import { GenresView } from './components/anime/GenresView'
 import { SeasonsView } from './components/anime/SeasonsView'
 import { FilterSearchView } from './components/anime/FilterSearchView'
 import { AISearchView } from './views/AISearchView'
-import { PlaceholderSection } from './components/shared/PlaceholderSection'
 import { GamesHome } from './components/games/GamesHome'
+import { GameGenresView } from './components/games/GameGenresView'
 import { GameDetails } from './components/games/GameDetails'
 import './assets/index.css'
 
@@ -56,7 +56,7 @@ function App(): React.JSX.Element {
           <Route path="/games/ai-search" element={<AISearchView domain="games" />} />
           <Route path="/games/bestsellers" element={<GamesHome title="Bestsellery Gier" />} />
           <Route path="/games/deals" element={<GamesHome title="Promocje Steam" />} />
-          <Route path="/games/genres" element={<GamesHome title="Gatunki Gier" />} />
+          <Route path="/games/genres" element={<GameGenresView />} />
           <Route path="/games/new" element={<GamesHome title="Nowości na Steam" />} />
           {/* Dynamic route must be last in the /games group */}
           <Route path="/games/:id" element={<GameDetails />} />
