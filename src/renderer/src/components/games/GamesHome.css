@@ -1,0 +1,39 @@
+.games-home-container {
+  padding: 2rem 5%;
+  min-height: calc(100vh - var(--header-height));
+  background: radial-gradient(circle at 50% 0%, rgba(42, 71, 94, 0.4) 0%, transparent 60%);
+}
+
+.games-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 0 0 15px rgba(102, 192, 244, 0.5);
+  /* Steam blue glow */
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 1400px) {
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+  color: var(--accent-cyan);
+  font-size: 1.2rem;
+}

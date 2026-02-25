@@ -1,77 +1,77 @@
 .view-container {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .view-header {
-    margin-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .view-title {
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .anime-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
 }
 
 .loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 50vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
 }
 
 .empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-muted);
-    font-size: 1.25rem;
-    background: var(--bg-surface-elevated);
-    border-radius: var(--radius-lg);
-    border: 1px dashed var(--glass-border);
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--glass-border);
 }
 
 /* Spinner Animation */
 .neon-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(0, 243, 255, 0.1);
-    border-top-color: var(--accent-cyan);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    box-shadow: var(--glow-cyan);
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 243, 255, 0.1);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  box-shadow: var(--glow-cyan);
 }
 
 .neon-spinner.purple {
-    border: 3px solid rgba(181, 53, 246, 0.1);
-    border-top-color: var(--accent-purple);
-    box-shadow: var(--glow-purple);
+  border: 3px solid rgba(181, 53, 246, 0.1);
+  border-top-color: var(--accent-purple);
+  box-shadow: var(--glow-purple);
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .fade-in {
-    animation: fadeIn 0.4s ease-in-out;
+  animation: fadeIn 0.4s ease-in-out;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

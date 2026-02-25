@@ -4,15 +4,21 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const api = {
   db: {
-    addFavorite: (anime: { id: number, title: string, coverImage: string }) => ipcRenderer.invoke('db:addFavorite', anime),
+    addFavorite: (anime: { id: number; title: string; coverImage: string }) =>
+      ipcRenderer.invoke('db:addFavorite', anime),
     removeFavorite: (id: number) => ipcRenderer.invoke('db:removeFavorite', id),
     getFavorites: () => ipcRenderer.invoke('db:getFavorites'),
     addHistory: (query: string) => ipcRenderer.invoke('db:addHistory', query),
     getHistory: () => ipcRenderer.invoke('db:getHistory'),
-    addTranslation: (animeId: number, desc: string) => ipcRenderer.invoke('db:addTranslation', animeId, desc),
+    addTranslation: (animeId: number, desc: string) =>
+      ipcRenderer.invoke('db:addTranslation', animeId, desc),
     getTranslation: (animeId: number) => ipcRenderer.invoke('db:getTranslation', animeId),
-    addReviewSummary: (animeId: number, summary: string) => ipcRenderer.invoke('db:addReviewSummary', animeId, summary),
+    addReviewSummary: (animeId: number, summary: string) =>
+      ipcRenderer.invoke('db:addReviewSummary', animeId, summary),
     getReviewSummary: (animeId: number) => ipcRenderer.invoke('db:getReviewSummary', animeId)
+  },
+  steam: {
+    fetch: (url: string) => ipcRenderer.invoke('steam:fetch', url)
   }
 }
 

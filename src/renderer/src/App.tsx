@@ -1,25 +1,30 @@
-import * as React from 'react';
-import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { Navbar } from './components/shared/Navbar';
-import { Home } from './components/anime/Home';
-import { Search } from './components/anime/Search';
-import { AnimeDetails } from './components/anime/AnimeDetails';
-import { GenresView } from './components/anime/GenresView';
-import { SeasonsView } from './components/anime/SeasonsView';
-import { FilterSearchView } from './components/anime/FilterSearchView';
-import { AISearchView } from './views/AISearchView';
-import { PlaceholderSection } from './components/shared/PlaceholderSection';
-import './assets/index.css';
+import * as React from 'react'
+import { useState } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Navbar } from './components/shared/Navbar'
+import { Home } from './components/anime/Home'
+import { Search } from './components/anime/Search'
+import { AnimeDetails } from './components/anime/AnimeDetails'
+import { GenresView } from './components/anime/GenresView'
+import { SeasonsView } from './components/anime/SeasonsView'
+import { FilterSearchView } from './components/anime/FilterSearchView'
+import { AISearchView } from './views/AISearchView'
+import { PlaceholderSection } from './components/shared/PlaceholderSection'
+import { GamesHome } from './components/games/GamesHome'
+import { GameDetails } from './components/games/GameDetails'
+import './assets/index.css'
 
 // Force TS server refresh
 
 function App(): React.JSX.Element {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isAiMode, setIsAiMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isAiMode, setIsAiMode] = useState(false)
+  const location = useLocation()
+
+  const isGames = location.pathname.startsWith('/games')
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${isGames ? 'theme-games' : ''}`}>
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -31,24 +36,34 @@ function App(): React.JSX.Element {
         <Routes>
           <Route path="/" element={<Navigate to="/anime" replace />} />
 
-          <Route path="/anime" element={
-            searchQuery.trim().length > 0 ? (
-              <Search searchQuery={searchQuery} isAiMode={isAiMode} />
-            ) : (
-              <Home />
-            )
-          } />
+          <Route
+            path="/anime"
+            element={
+              searchQuery.trim().length > 0 ? (
+                <Search searchQuery={searchQuery} isAiMode={isAiMode} />
+              ) : (
+                <Home />
+              )
+            }
+          />
           <Route path="/anime/:id" element={<AnimeDetails />} />
           <Route path="/anime/genres" element={<GenresView />} />
           <Route path="/anime/seasons" element={<SeasonsView />} />
           <Route path="/anime/filter-search" element={<FilterSearchView />} />
-          <Route path="/ai-search" element={<AISearchView />} />
+          <Route path="/anime/ai-search" element={<AISearchView domain="anime" />} />
 
-          <Route path="/games" element={<PlaceholderSection title="Neo Gry" colorClass="neon-text-green" />} />
+          <Route path="/games" element={<GamesHome />} />
+          <Route path="/games/ai-search" element={<AISearchView domain="games" />} />
+          <Route path="/games/bestsellers" element={<GamesHome title="Bestsellery Gier" />} />
+          <Route path="/games/deals" element={<GamesHome title="Promocje Steam" />} />
+          <Route path="/games/genres" element={<GamesHome title="Gatunki Gier" />} />
+          <Route path="/games/new" element={<GamesHome title="Nowości na Steam" />} />
+          {/* Dynamic route must be last in the /games group */}
+          <Route path="/games/:id" element={<GameDetails />} />
         </Routes>
       </main>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

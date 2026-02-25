@@ -32,6 +32,18 @@
   --header-height: 80px;
 }
 
+/* Games Theme Overrides */
+.theme-games {
+  --bg-deep: #1b2838;
+  --bg-surface: #171a21;
+  --bg-surface-elevated: #2a475e;
+  --accent-cyan: #66c0f4;
+  --accent-green: #a4d007;
+  /* Steam green */
+  --glow-cyan: 0 0 20px rgba(102, 192, 244, 0.4);
+  --glow-green: 0 0 20px rgba(164, 208, 7, 0.4);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -43,7 +55,18 @@ html {
 }
 
 body {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family:
+    'Outfit',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
   background-color: var(--bg-deep);
   color: var(--text-main);
   min-height: 100vh;

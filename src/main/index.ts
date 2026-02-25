@@ -53,7 +53,17 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // Database IPC Handlers
-  const { addFavorite, removeFavorite, getFavorites, addHistory, getHistory, addTranslation, getTranslation, addReviewSummary, getReviewSummary } = require('./database')
+  const {
+    addFavorite,
+    removeFavorite,
+    getFavorites,
+    addHistory,
+    getHistory,
+    addTranslation,
+    getTranslation,
+    addReviewSummary,
+    getReviewSummary
+  } = require('./database')
   ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
   ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
   ipcMain.handle('db:getFavorites', () => getFavorites())
@@ -63,6 +73,21 @@ app.whenReady().then(() => {
   ipcMain.handle('db:getTranslation', (_, animeId) => getTranslation(animeId))
   ipcMain.handle('db:addReviewSummary', (_, animeId, summary) => addReviewSummary(animeId, summary))
   ipcMain.handle('db:getReviewSummary', (_, animeId) => getReviewSummary(animeId))
+
+  // Steam API Proxy IPC (Bypasses CORS for external APIs in Electron)
+  ipcMain.handle('steam:fetch', async (_, url: string) => {
+    try {
+      // Use native fetch available in Node 18+
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Steam API HTTP error! status: ${response.status} from ${url}`)
+      }
+      return await response.json()
+    } catch (error: any) {
+      console.error('Steam API error:', error.message)
+      throw error
+    }
+  })
 
   createWindow()
 
