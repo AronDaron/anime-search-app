@@ -28,14 +28,10 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
 
     const path = location.pathname;
     let currentSection = { name: 'ANIME', color: 'cyan', path: '/anime' };
-    if (path.startsWith('/series')) currentSection = { name: 'SERIALE', color: 'purple', path: '/series' };
-    else if (path.startsWith('/movies')) currentSection = { name: 'FILMY', color: 'red', path: '/movies' };
-    else if (path.startsWith('/games')) currentSection = { name: 'GRY', color: 'green', path: '/games' };
+    if (path.startsWith('/games')) currentSection = { name: 'GRY', color: 'green', path: '/games' };
 
     const sections = [
         { name: 'ANIME', color: 'cyan', path: '/anime' },
-        { name: 'SERIALE', color: 'purple', path: '/series' },
-        { name: 'FILMY', color: 'red', path: '/movies' },
         { name: 'GRY', color: 'green', path: '/games' }
     ];
 

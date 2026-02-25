@@ -44,8 +44,6 @@ function App(): React.JSX.Element {
           <Route path="/anime/filter-search" element={<FilterSearchView />} />
           <Route path="/ai-search" element={<AISearchView />} />
 
-          <Route path="/series" element={<PlaceholderSection title="Neo Seriale" colorClass="neon-text-purple" />} />
-          <Route path="/movies" element={<PlaceholderSection title="Neo Filmy" colorClass="neon-text-red" />} />
           <Route path="/games" element={<PlaceholderSection title="Neo Gry" colorClass="neon-text-green" />} />
         </Routes>
       </main>

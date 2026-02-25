@@ -1,7 +1,7 @@
 # Neo Search (Aplikacja Wyszukiwarki Anime) - Logi Pamięci & Kontekst
 
 ## Przegląd Projektu
-Neo Search to aplikacja desktopowa oparta na Electronie (ze wsparciem dla podglądu przez przeglądarkę dzięki Vite). Głównym oknem zastosowań jest przeszukiwanie, przeglądanie detali oraz zapisywanie na dysku ulubionych anime, serialow, filmow i gier. Aplikacja uderza w API AniList GraphQL, żeby pobierać okładki, odcinki i recenzje, a dzięki wykorzystaniu LLMa (OpenRouter) potrafi sugerować anime na podstawie naturalnego opisu fabuły od użytkownika. Własne dane (historia wyszukiwania, polubienia) są obsługiwane przez super-szybką, lokalną bazę SQLite ukrytą dogłębnie w procesach zaplecza Electrona.
+Neo Search to aplikacja desktopowa oparta na Electronie (ze wsparciem dla podglądu przez przeglądarkę dzięki Vite). Głównym oknem zastosowań jest przeszukiwanie, przeglądanie detali oraz zapisywanie na dysku ulubionych anime i gier. Aplikacja uderza w API AniList GraphQL, żeby pobierać okładki, odcinki i recenzje, a dzięki wykorzystaniu LLMa (OpenRouter) potrafi sugerować anime na podstawie naturalnego opisu fabuły od użytkownika. Własne dane (historia wyszukiwania, polubienia) są obsługiwane przez super-szybką, lokalną bazę SQLite ukrytą dogłębnie w procesach zaplecza Electrona.
 
 ## Stos Technologiczny (Technologie)
 - **Framework:** Electron (via electron-vite)
@@ -47,9 +47,9 @@ Miejsce gdzie znajdują się absolutnie wszystkie pliki wyświetlane użytkownik
 - **Tłumaczenie Tekstów i Generowanie Opinii (Optymalizacja SQLite)**: W `AnimeDetails.tsx` wdrożono hybrydowy system korzystający z darmowego modelu Gemini dla AI. Posiada on mechanizm ratowania Tokenów API: Najpierw zapytanie o przetłumaczony opis lub wygenerowany zarys recenzji (Opinie) trafia do lokalnej szybkiej bazy `window.api.db` (do tabeli `translations` lub `review_summaries`). Dopiero wtedy, gdy odpowiedź nie istnieje w cache'u aplikacji - następuje wysłanie surowych danych do OpenRoutera. Wygenerowany wynik wyświetla się użytkownikowi i jest niezauważalnie, permanentnie zrzucany do bazy danych, by w przyszłości zwrócić wynik natychmiastowo.
 
 #### Zmienne, Kolory i Główne Komponenty Aplikacji
-- `index.css`: Główny plik resetu. Na poziomie globalnym wymusza wsparcie Dark-Theme. Posiada wdrożone kolory zmiennych (CSS variables) gotowe do wsparcia hubów: Anime (Cyan), Seriale (Purple), Filmy (Red), Gry (Green).
+- `index.css`: Główny plik resetu. Na poziomie globalnym wymusza wsparcie Dark-Theme. Posiada wdrożone kolory zmiennych (CSS variables) gotowe do wsparcia hubów: Anime (Cyan), Gry (Green).
 - `Navbar.tsx` / `Navbar.css` (`src/renderer/src/components/shared/`): Interaktywny pasek ze wsparciem menu rozwijanego (dropdown) dla zmian modułów popkultury. Posiada obok wyszukiwarkę tekstową, klasyczny zaawansowany lejek z filtrami ("Wyszukiwanie") oraz inteligentny przycisk "Wyszukiwanie AI". Przyciski funkcyjne na pasku wystylizowane są z pomocą wyraźnych 4-pikselowych neonowych obramowań odpornych na łamanie wierszy. Towarzyszą im tagowe pod-moduły "Gatunki" i "Sezony".
-- `PlaceholderSection.tsx` (`src/renderer/src/components/shared/`): Uniwersalny, adaptatywny wizualnie komponent używany jako atrapa do podglądu ścieżek `movies`, `series` i `games`, przed wdrożeniem finalnego kodu dla tych subsekcji.
+- `PlaceholderSection.tsx` (`src/renderer/src/components/shared/`): Uniwersalny, adaptatywny wizualnie komponent używany jako atrapa do podglądu ścieżki `games`, przed wdrożeniem finalnego kodu dla tej subsekcji.
 
 #### Komponenty Modułu Anime (`src/renderer/src/components/anime/`)
 - `Home.tsx` / `Home.css`: Pulpit domowy witający użytkownika podzielony elastycznym gridem/flexem na asymetryczne kolumny. Po lewej (z łamaniem boksów) renderuje siatki `NeonCard` najpopularniejszych animacji. Po prawej znajduje się "Kalendarz Premier" – pobrany w locie za pomocą `Promise.all` harmonogram wychodzących dzisiaj/jutro odcinków wraz z odliczającym licznikiem czasowym dla łatwej weryfikacji przez kliknięcie.
