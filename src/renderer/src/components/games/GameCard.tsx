@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Monitor } from 'lucide-react'
+import { getSteamGameDetails } from '../../api/steamStore'
 import './GameCard.css'
 
 export interface GameData {
@@ -20,13 +21,43 @@ interface GameCardProps {
 }
 
 export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
-  const [imgError, setImgError] = React.useState(false)
+  const [imgError, setImgError] = useState(false)
+  const [currentImg, setCurrentImg] = useState(game.capsuleImage)
+  const [repairAttempted, setRepairAttempted] = useState(false)
 
   // Formatowanie ceny na lokację polską (zł)
   const formatPrice = (p: number) => {
     if (p === 0) return 'Free to Play'
     return `${p.toFixed(2).replace('.', ',')} zł`
   }
+
+  // Mechanizm "Auto-Naprawy" obrazka dla nowych gier (z hashem)
+  useEffect(() => {
+    if (imgError && !repairAttempted) {
+      setRepairAttempted(true)
+
+      const repairImage = async () => {
+        try {
+          const details = await getSteamGameDetails(game.id)
+          if (details?.header_image) {
+            setCurrentImg(details.header_image)
+            setImgError(false)
+          }
+        } catch (e) {
+          console.warn(`Failed to repair image for game ${game.id}`)
+        }
+      }
+
+      repairImage()
+    }
+  }, [imgError, game.id, repairAttempted])
+
+  // Aktualizuj obrazek jeśli prop się zmieni
+  useEffect(() => {
+    setCurrentImg(game.capsuleImage)
+    setImgError(false)
+    setRepairAttempted(false)
+  }, [game.capsuleImage])
 
   return (
     <motion.div
@@ -38,15 +69,18 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
       <div className="game-card-image-wrapper">
         {!imgError ? (
           <img
-            src={game.capsuleImage}
+            src={currentImg}
             alt={game.title}
             className="game-card-image"
             loading="lazy"
             onError={(e) => {
               const target = e.target as HTMLImageElement
-              // Próbujemy różnych wariantów zanim się poddamy
-              if (target.src.includes('header.jpg')) {
-                // Jeśli header nie działa, spróbuj capsule_616x353 (rzadsze ale bywa)
+              // Próbujemy różnych wariantów zanim się poddamy (dla starych struktur)
+              if (target.src.includes('header.jpg') && !target.src.includes('store_item_assets')) {
+                // Jeśli stary header nie działa, spróbuj nowszy format (bez hasha jeszcze)
+                target.src = target.src.replace('/steam/apps/', '/store_item_assets/steam/apps/')
+              } else if (target.src.includes('header.jpg')) {
+                // Jeśli header nie działa, spróbuj capsule_616x353
                 target.src = target.src.replace('header.jpg', 'capsule_616x353.jpg')
               } else if (target.src.includes('capsule_616x353.jpg')) {
                 // Ostateczna próba: mały obrazek

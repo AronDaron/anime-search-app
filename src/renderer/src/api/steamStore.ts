@@ -138,23 +138,16 @@ export const searchSteamGamesByGenre = async (
   genre: string
 ): Promise<SteamFeaturedCategoryItem[]> => {
   try {
-    // Endpint wyszukiwania Steam zwraca HTML wymieszany w JSONie jeśli uderzamy standardowo, 
-    // więc dla podstrony Gatunków skorzystamy ze SteamSpy, które ma prostsze API GET po gatunkach.
     const url = `https://steamspy.com/api.php`
     const response = await fetchSteamData(url, { request: 'genre', genre: genre })
 
-    // SteamSpy zwraca obiekt z kluczami jako string id gier
-    // Ograniczamy i mapujemy to z grubsza na nasz potrzebny interfejs,
-    // ponieważ SteamSpy nie ma wszystkich obrazków zduplikowanych jak endpoint featured,
-    // zbudujemy adresy ręcznie
     if (response && typeof response === 'object' && !Array.isArray(response)) {
+      // Mapujemy WSZYSTKIE gry z gatunku (bez slice)
       const items: SteamFeaturedCategoryItem[] = Object.values(response)
-        .filter((g: any) => g && g.appid) // Filtruj tylko poprawne obiekty gier
-        .slice(0, 30)
+        .filter((g: any) => g && g.appid)
         .map((spyGame: any) => {
           const finalPriceCents = Number(spyGame.price || 0)
           const discountPercent = Number(spyGame.discount || 0)
-          // Cena bazowa
           const originalPriceCents = Number(spyGame.initialprice || finalPriceCents)
 
           return {
@@ -165,19 +158,18 @@ export const searchSteamGamesByGenre = async (
             discount_percent: discountPercent,
             original_price: originalPriceCents,
             final_price: finalPriceCents,
-            currency: 'USD', // Steamspy defaultowo zwraca centy $
-            large_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
-            small_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            currency: 'USD',
+            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
             windows_available: true,
             mac_available: false,
             linux_available: false,
             streamingvideo_available: false,
-            header_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`
+            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
           } as SteamFeaturedCategoryItem
         })
 
-      // Sortuj wg score żeby najlepsze gry z gatunku wyświetlały się najpierw
-      return items.sort((a, b) => b.id - a.id) // Dla mocku najnowsze po id, bo spy nie gwarantuje sortu
+      return items
     }
 
     return []
@@ -225,18 +217,18 @@ export const searchSteamGames = async (query: string): Promise<SteamFeaturedCate
         id: item.id,
         type: 0,
         name: item.name,
-        discounted: !!item.price, 
+        discounted: !!item.price,
         discount_percent: item.price?.discount_percent || 0,
         original_price: item.price?.initial || 0,
         final_price: item.price?.final || 0,
         currency: 'PLN',
-        large_capsule_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+        large_capsule_image: item.header_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`,
         small_capsule_image: item.tiny_image,
         windows_available: item.platforms?.windows || true,
         mac_available: item.platforms?.mac || false,
         linux_available: item.platforms?.linux || false,
         streamingvideo_available: false,
-        header_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`
+        header_image: item.header_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`
       })) as SteamFeaturedCategoryItem[]
     }
 

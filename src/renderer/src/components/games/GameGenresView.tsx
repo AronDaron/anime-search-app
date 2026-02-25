@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameCard, GameData } from './GameCard'
 import { searchSteamGamesByGenre } from '../../api/steamStore'
 import '../shared/Grid.css'
-import './GamesHome.css' // Reuse the same CSS structure where applicable
+import './GamesHome.css'
 
 const GAME_GENRES = [
     { label: 'Akcja', id: 'Action' },
@@ -23,17 +23,24 @@ const GAME_GENRES = [
     { label: 'FPS', id: 'FPS' }
 ]
 
+const INITIAL_LIMIT = 30
+const INCREMENT = 20
+
 export const GameGenresView: React.FC = () => {
     const navigate = useNavigate()
     const [selectedGenre, setSelectedGenre] = useState<string>('Action')
-    const [games, setGames] = useState<GameData[]>([])
+    const [allGames, setAllGames] = useState<GameData[]>([])
+    const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT)
     const [isLoading, setIsLoading] = useState<boolean>(true)
+
+    const loaderRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         let isMounted = true
 
         const fetchGenreGames = async () => {
             setIsLoading(true)
+            setDisplayLimit(INITIAL_LIMIT)
             try {
                 const responseItems = await searchSteamGamesByGenre(selectedGenre)
                 if (!isMounted) return
@@ -45,14 +52,14 @@ export const GameGenresView: React.FC = () => {
                     price: item.final_price / 100,
                     originalPrice: item.original_price ? item.original_price / 100 : undefined,
                     discountPercent: item.discount_percent,
-                    tags: [], // Tags not available in featured categories summary limit
+                    tags: [],
                     osWindows: item.windows_available,
                 }))
 
-                setGames(mappedGames)
+                setAllGames(mappedGames)
             } catch (error) {
                 console.error('Failed to load genre data', error)
-                if (isMounted) setGames([])
+                if (isMounted) setAllGames([])
             } finally {
                 if (isMounted) setIsLoading(false)
             }
@@ -65,6 +72,22 @@ export const GameGenresView: React.FC = () => {
         }
     }, [selectedGenre])
 
+    // Infinite Scroll Logic
+    useEffect(() => {
+        if (!loaderRef.current) return
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && allGames.length > displayLimit) {
+                setDisplayLimit(prev => prev + INCREMENT)
+            }
+        }, { threshold: 0.1 })
+
+        observer.observe(loaderRef.current)
+        return () => observer.disconnect()
+    }, [allGames.length, displayLimit])
+
+    const visibleGames = allGames.slice(0, displayLimit)
+
     return (
         <div className="view-container fade-in">
             <div className="view-header">
@@ -73,17 +96,7 @@ export const GameGenresView: React.FC = () => {
                 </h2>
             </div>
 
-            <div
-                className="filters-container glass-panel"
-                style={{
-                    padding: '1.5rem',
-                    marginBottom: '2rem',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1rem'
-                }}
-            >
+            <div className="filters-container glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '12px' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {GAME_GENRES.map((genre) => (
                         <button
@@ -110,24 +123,22 @@ export const GameGenresView: React.FC = () => {
                 {isLoading ? (
                     <div className="loading-state" style={{ minHeight: '300px' }}>
                         <div className="neon-spinner green"></div>
-                        <p>Wczytywanie gier z kategorii {GAME_GENRES.find((g) => g.id === selectedGenre)?.label}...</p>
+                        <p>Wczytywanie gier: {GAME_GENRES.find((g) => g.id === selectedGenre)?.label}...</p>
                     </div>
                 ) : (
                     <>
-                        {games.length === 0 ? (
+                        {allGames.length === 0 ? (
                             <div className="empty-state">
-                                <p>
-                                    Nie odnaleziono gier dla gatunku "
-                                    {GAME_GENRES.find((g) => g.id === selectedGenre)?.label || selectedGenre}".
-                                </p>
+                                <p>Nie odnaleziono gier dla tego gatunku.</p>
                             </div>
                         ) : (
                             <div className="games-grid">
-                                {games.map((game) => (
+                                {visibleGames.map((game) => (
                                     <div key={game.id} className="game-card-wrapper">
                                         <GameCard game={game} onClick={() => navigate(`/games/${game.id}`)} />
                                     </div>
                                 ))}
+                                <div ref={loaderRef} style={{ gridColumn: '1/-1', height: '20px' }}></div>
                             </div>
                         )}
                     </>
