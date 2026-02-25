@@ -257,6 +257,8 @@ export interface AnimeDetailsData {
       type: string;
       context: string;
       allTime: boolean;
+      season: string | null;
+      year: number | null;
     }[];
     genres: string[];
     studios: { nodes: { name: string }[] };
@@ -293,6 +295,10 @@ export interface AnimeDetailsData {
       type: string;
       language: string | null;
     }[];
+    stats: {
+      scoreDistribution: { score: number; amount: number; }[];
+      statusDistribution: { status: string; amount: number; }[];
+    };
     streamingEpisodes: {
       title: string;
       thumbnail: string;
@@ -344,6 +350,8 @@ query ($id: Int) {
       type
       context
       allTime
+      season
+      year
     }
     genres
     studios(isMain: true) {
@@ -396,6 +404,16 @@ query ($id: Int) {
       site
       type
       language
+    }
+    stats {
+      scoreDistribution {
+        score
+        amount
+      }
+      statusDistribution {
+        status
+        amount
+      }
     }
     streamingEpisodes {
       title

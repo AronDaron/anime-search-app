@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAnimeDetails, getAnimeEpisodesFromJikan, AnimeDetailsData, JikanEpisode } from '../../api/anilist';
 import { translateDescriptionToPolish, summarizeReviews } from '../../api/ai';
-import { Sparkles, MessageSquare } from 'lucide-react';
+import { Sparkles, MessageSquare, Flame, Heart, TrendingUp, BarChart2, Activity, Trophy } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, XAxis, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import './AnimeDetails.css';
 
 const apiToPolishGenre = (genre: string): string => {
@@ -14,6 +15,67 @@ const apiToPolishGenre = (genre: string): string => {
         "Supernatural": "Nadprzyrodzone", "Thriller": "Thriller"
     };
     return map[genre] || genre;
+};
+
+const translateRankingContext = (context: string): string => {
+    const contextMap: Record<string, string> = {
+        'highest rated all time': 'Najwyżej oceniane wszech czasów',
+        'highest rated': 'Najwyżej oceniane',
+        'most popular all time': 'Najpopularniejsze wszech czasów',
+        'most popular': 'Najpopularniejsze',
+        'most favorited all time': 'Ulubione wszech czasów',
+        'most favorited': 'Ulubione',
+    };
+
+    // Fallback translation rules for generic season rankings
+    let translated = context;
+    if (contextMap[context.toLowerCase()]) {
+        translated = contextMap[context.toLowerCase()];
+    } else {
+        translated = translated.replace(/highest rated/i, 'Najwyżej oceniane');
+        translated = translated.replace(/most popular/i, 'Najpopularniejsze');
+        translated = translated.replace(/all time/i, 'wszech czasów');
+        translated = translated.replace(/winter/i, 'Zima');
+        translated = translated.replace(/spring/i, 'Wiosna');
+        translated = translated.replace(/summer/i, 'Lato');
+        translated = translated.replace(/fall/i, 'Jesień');
+    }
+    return translated;
+};
+
+const translateSeasonInfo = (season?: string | null): string => {
+    if (!season) return '';
+    const sMap: Record<string, string> = {
+        'WINTER': 'Zima',
+        'SPRING': 'Wiosna',
+        'SUMMER': 'Lato',
+        'FALL': 'Jesień'
+    };
+    return sMap[season.toUpperCase()] || season;
+};
+
+const translateStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+        'CURRENT': 'Oglądane',
+        'PLANNING': 'Planowane',
+        'COMPLETED': 'Ukończone',
+        'DROPPED': 'Porzucone',
+        'PAUSED': 'Wstrzymane',
+        'REPEATING': 'Oglądane ponownie'
+    };
+    return statusMap[status.toUpperCase()] || status;
+};
+
+const translateAiringStatus = (status: string): string => {
+    if (!status) return '';
+    const statusMap: Record<string, string> = {
+        'FINISHED': 'Zakończone',
+        'RELEASING': 'Emitowane',
+        'NOT_YET_RELEASED': 'Planowane',
+        'CANCELLED': 'Anulowane',
+        'HIATUS': 'Wstrzymane'
+    };
+    return statusMap[status.toUpperCase()] || status;
 };
 
 export const AnimeDetails: React.FC = () => {
@@ -247,7 +309,7 @@ export const AnimeDetails: React.FC = () => {
                                 <div className="anime-stats">
                                     {anime.averageScore && <span className="stat-badge score">Ocena: {anime.averageScore}%</span>}
                                     {anime.episodes && <span className="stat-badge episodes">Odcinków: {anime.episodes}</span>}
-                                    <span className="stat-badge format">{anime.status}</span>
+                                    <span className="stat-badge format">{translateAiringStatus(anime.status)}</span>
                                 </div>
                             </div>
 
@@ -455,40 +517,151 @@ export const AnimeDetails: React.FC = () => {
 
                 {activeTab === 'stats' && (
                     <div className="tab-content fade-in-tab">
-                        <div className="stats-grid mt-4">
-                            <div className="stat-card glass-panel-inner">
-                                <span className="stat-value">{anime.averageScore || 'N/A'}%</span>
-                                <span className="stat-label">Średnia Ocena</span>
+                        <div className="stats-bento-grid mt-4">
+                            {/* Score Distribution Chart */}
+                            <div className="bento-card bento-main glass-panel-inner">
+                                <div className="bento-header">
+                                    <BarChart2 size={18} className="neon-text-purple" />
+                                    <h3>Rozkład Ocen</h3>
+                                </div>
+                                <div className="bento-chart-container" style={{ height: '200px', width: '100%', marginTop: '1rem' }}>
+                                    {anime.stats?.scoreDistribution ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={anime.stats.scoreDistribution}>
+                                                <XAxis dataKey="score" stroke="rgba(255,255,255,0.5)" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }} />
+                                                <RechartsTooltip
+                                                    contentStyle={{ backgroundColor: 'rgba(20, 20, 30, 0.9)', borderColor: '#bf00ff', borderRadius: '8px', color: '#fff' }}
+                                                    cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                                                    formatter={(value: any) => [new Intl.NumberFormat('pl-PL').format(value || 0), 'Ocen']}
+                                                    labelFormatter={(label) => `Ocena: ${label}`}
+                                                />
+                                                <Bar dataKey="amount" fill="#bf00ff" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="empty-state-tab"><p>Brak danych rozkładu ocen.</p></div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="stat-card glass-panel-inner">
-                                <span className="stat-value">{anime.meanScore || 'N/A'}%</span>
-                                <span className="stat-label">Średnia (Mean)</span>
+
+                            {/* Status Distribution Donut Chart */}
+                            <div className="bento-card bento-side glass-panel-inner">
+                                <div className="bento-header">
+                                    <Activity size={18} className="neon-text-purple" />
+                                    <h3>Statusy Oglądania</h3>
+                                </div>
+                                <div className="bento-chart-container" style={{ height: '200px', width: '100%', marginTop: '1rem', position: 'relative' }}>
+                                    {anime.stats?.statusDistribution ? (
+                                        <>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={anime.stats.statusDistribution.map(s => ({
+                                                            name: translateStatus(s.status),
+                                                            value: s.amount
+                                                        }))}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={50}
+                                                        outerRadius={80}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                        stroke="none"
+                                                    >
+                                                        {anime.stats.statusDistribution.map((_, index) => {
+                                                            const colors = ['#00e5ff', '#ff007f', '#b300ff', '#ffb300', '#aaaaaa', '#4caf50'];
+                                                            return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                                        })}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        contentStyle={{ backgroundColor: 'rgba(20, 20, 30, 0.9)', borderColor: '#00e5ff', borderRadius: '8px', color: '#fff' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                        formatter={(value: any) => [new Intl.NumberFormat('pl-PL').format(value || 0), 'Użytk.']}
+                                                    />
+                                                    <Legend
+                                                        verticalAlign="bottom"
+                                                        height={36}
+                                                        iconType="circle"
+                                                        wrapperStyle={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)', paddingTop: '15px' }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            <div style={{ position: 'absolute', top: '43%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                                                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'rgba(255,255,255,0.8)' }}>Statusy</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="empty-state-tab"><p>Brak danych o statusach.</p></div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="stat-card glass-panel-inner">
-                                <span className="stat-value">#{anime.popularity?.toLocaleString() || 'N/A'}</span>
-                                <span className="stat-label">Popularność</span>
+
+                            {/* Small stat cards */}
+                            <div className="bento-card bento-small glass-panel-inner bento-score-card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div className="bento-small-content">
+                                    <div className="radial-progress" style={{
+                                        '--progress': anime.averageScore ? `${anime.averageScore}%` : '0%',
+                                        '--progress-color': anime.averageScore && anime.averageScore > 80 ? '#00e5ff' : anime.averageScore && anime.averageScore > 60 ? '#ffb300' : '#ff007f'
+                                    } as React.CSSProperties}>
+                                        <div className="inner-circle">
+                                            <span className="stat-value">{anime.averageScore || 'N/A'}%</span>
+                                        </div>
+                                    </div>
+                                    <span className="stat-label mt-2">Średnia Ocena</span>
+                                    <span className="stat-sublabel" style={{ fontSize: '0.8rem', opacity: 0.6 }}>Oceny: {anime.meanScore || 'N/A'}%</span>
+                                </div>
                             </div>
-                            <div className="stat-card glass-panel-inner">
-                                <span className="stat-value">{anime.favourites?.toLocaleString() || 'N/A'}</span>
-                                <span className="stat-label">Ulubione</span>
+
+                            <div className="bento-card bento-small glass-panel-inner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div className="bento-small-content">
+                                    <TrendingUp size={28} className="neon-text-blue" style={{ marginBottom: '10px' }} />
+                                    <span className="stat-value">{anime.popularity ? (anime.popularity > 1000 ? (anime.popularity / 1000).toFixed(1) + 'k' : anime.popularity) : 'N/A'}</span>
+                                    <span className="stat-label">Popularność</span>
+                                </div>
                             </div>
-                            <div className="stat-card glass-panel-inner">
-                                <span className="stat-value">{anime.trending?.toLocaleString() || 'N/A'}</span>
-                                <span className="stat-label">Trendujące</span>
+
+                            <div className="bento-card bento-small glass-panel-inner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div className="bento-small-content">
+                                    <Heart size={28} style={{ color: '#ff007f', marginBottom: '10px' }} />
+                                    <span className="stat-value">{anime.favourites ? (anime.favourites > 1000 ? (anime.favourites / 1000).toFixed(1) + 'k' : anime.favourites) : 'N/A'}</span>
+                                    <span className="stat-label">Ulubione</span>
+                                </div>
                             </div>
+
+                            <div className="bento-card bento-small glass-panel-inner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                <div className="bento-small-content">
+                                    <Flame size={28} style={{ color: '#ffb300', marginBottom: '10px' }} />
+                                    <span className="stat-value">{anime.trending ? (anime.trending > 1000 ? (anime.trending / 1000).toFixed(1) + 'k' : anime.trending) : 'N/A'}</span>
+                                    <span className="stat-label">Trendujące</span>
+                                </div>
+                            </div>
+
+                            {/* Rankings list (Wide bento block) */}
+                            {anime.rankings && anime.rankings.length > 0 && (
+                                <div className="bento-card bento-wide glass-panel-inner rankings-list" style={{ gridColumn: '1 / -1' }}>
+                                    <div className="bento-header mb-3">
+                                        <Trophy size={18} style={{ color: '#ffd700' }} />
+                                        <h3>Rankingi</h3>
+                                    </div>
+                                    <ul className="rankings-ul" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+                                        {anime.rankings.map((r, idx) => (
+                                            <li key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 15px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                                <span className="rank-number" style={{ color: '#ff007f', fontWeight: 'bold', fontSize: '1.2rem', minWidth: '40px' }}>#{r.rank}</span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                    <span style={{ lineHeight: '1.2' }}>
+                                                        {translateRankingContext(r.context)}
+                                                        {(r.season || r.year) && !r.allTime && !r.context.toLowerCase().includes(r.year?.toString() || '999999') && (
+                                                            ` ${translateSeasonInfo(r.season)} ${r.year ? r.year : ''}`
+                                                        )}
+                                                    </span>
+                                                    {r.allTime && <span style={{ opacity: 0.6, fontSize: '0.85rem', marginTop: '2px' }}>(Cały czas)</span>}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
-                        {anime.rankings && anime.rankings.length > 0 && (
-                            <div className="rankings-list mt-4 glass-panel-inner">
-                                <h3>Rankingi</h3>
-                                <ul>
-                                    {anime.rankings.map((r, idx) => (
-                                        <li key={idx}>
-                                            <span className="rank-number">#{r.rank}</span> {r.context} {r.allTime ? '(All Time)' : ''}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
                     </div>
                 )}
 
