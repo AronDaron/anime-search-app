@@ -75,8 +75,12 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
               className="search-input"
               placeholder={
                 isAiMode
-                  ? 'Opisz fabułę... (np. magowie pocztowi)'
-                  : 'Szukaj anime... (np. Jujutsu Kaisen)'
+                  ? isGamesSection
+                    ? 'Opisz grę... (np. RPG w kosmosie)'
+                    : 'Opisz fabułę... (np. magowie pocztowi)'
+                  : isGamesSection
+                    ? 'Szukaj gry... (np. Cyberpunk 2077)'
+                    : 'Szukaj anime... (np. Jujutsu Kaisen)'
               }
               value={searchQuery}
               onChange={handleSearchChange}
