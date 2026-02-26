@@ -241,18 +241,35 @@ export const GameDetails: React.FC = () => {
                 <span>Ranking & Oceny</span>
               </div>
               <div className="sidebar-chart-container">
-                {extraStats && (
+                {reviewsResponse?.query_summary && (
                   <>
                     <div className="score-rank-badge">
-                      <span className="rank-label">Score Rank:</span>
-                      <span className="rank-value">{extraStats.score_rank || 'N/A'}%</span>
+                      <div className="rank-value-group">
+                        <span className="rank-value">
+                          {Math.round(
+                            (reviewsResponse.query_summary.total_positive /
+                              reviewsResponse.query_summary.total_reviews) *
+                            100
+                          )}
+                          %
+                        </span>
+                        <span className="rank-desc">
+                          {reviewsResponse.query_summary.review_score_desc}
+                        </span>
+                      </div>
                     </div>
                     <ResponsiveContainer width="100%" height={90}>
                       <PieChart>
                         <Pie
                           data={[
-                            { name: 'Positive', value: extraStats.positive },
-                            { name: 'Negative', value: extraStats.negative }
+                            {
+                              name: 'Positive',
+                              value: reviewsResponse.query_summary.total_positive
+                            },
+                            {
+                              name: 'Negative',
+                              value: reviewsResponse.query_summary.total_negative
+                            }
                           ]}
                           innerRadius={20}
                           outerRadius={35}
@@ -272,12 +289,19 @@ export const GameDetails: React.FC = () => {
                         />
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="chart-legend">
+                      <span className="pos">
+                        {reviewsResponse.query_summary.total_positive.toLocaleString()} +
+                      </span>
+                      <span className="neg">
+                        {reviewsResponse.query_summary.total_negative.toLocaleString()} -
+                      </span>
+                    </div>
                   </>
                 )}
-                <div className="chart-legend">
-                  <span className="pos">{extraStats?.positive?.toLocaleString()} +</span>
-                  <span className="neg">{extraStats?.negative?.toLocaleString()} -</span>
-                </div>
+                {!reviewsResponse?.query_summary && !isLoading && (
+                  <div className="stat-value-small">Brak danych o recenzjach</div>
+                )}
               </div>
             </div>
 
@@ -416,27 +440,6 @@ export const GameDetails: React.FC = () => {
               ))}
             </div>
 
-            {reviewsResponse &&
-              reviewsResponse.query_summary &&
-              reviewsResponse.query_summary.total_reviews > 0 && (
-                <div className="game-reviews-summary-block">
-                  <div className="game-reviews-text">
-                    <span className="reviews-desc">
-                      {reviewsResponse.query_summary.review_score_desc}
-                    </span>
-                    <span className="reviews-count">
-                      ({reviewsResponse.query_summary.total_reviews.toLocaleString()} recenzji)
-                    </span>
-                  </div>
-                  <div
-                    className="game-reviews-pie-chart"
-                    style={{
-                      background: `conic-gradient(var(--accent-green) ${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}%, var(--accent-red) 0)`
-                    }}
-                    title={`${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}% Pozytywnych`}
-                  ></div>
-                </div>
-              )}
 
             <div className="game-purchase-action">
               <div className="purchase-price-area">

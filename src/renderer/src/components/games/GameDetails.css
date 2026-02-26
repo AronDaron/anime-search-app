@@ -56,6 +56,24 @@
   letter-spacing: -1px;
 }
 
+.back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  color: #fff;
+  transform: translateX(-4px);
+}
+
 /* Main Grid Layout - Tucked Style */
 .game-main-grid {
   display: grid;
@@ -168,11 +186,28 @@
 
 .score-rank-badge {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--accent-purple);
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 0.8rem;
+}
+
+.rank-value-group {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rank-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-green);
+}
+
+.rank-desc {
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 500;
 }
 
 .extra-meta-info {
