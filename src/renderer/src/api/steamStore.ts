@@ -10,6 +10,7 @@ export interface SteamAppDetails {
   short_description: string
   about_the_game: string
   detailed_description: string
+  type: string
   supported_languages: string
   pc_requirements: {
     minimum?: string
@@ -84,7 +85,8 @@ export const getSteamGameDetails = async (
     const gameDataRoot = response[appId.toString()]
 
     if (gameDataRoot && gameDataRoot.success) {
-      return gameDataRoot.data as SteamAppDetails
+      const data = gameDataRoot.data as SteamAppDetails
+      return data
     }
 
     console.error(`Steam StoreAPI nie znalazł danych dla appid: ${appId}`)
@@ -98,7 +100,6 @@ export const getSteamGameDetails = async (
 // Typowania dla kategorii featured ze strony steama
 export interface SteamFeaturedCategoryItem {
   id: number
-  type: number
   name: string
   discounted: boolean
   discount_percent: number
@@ -112,6 +113,7 @@ export interface SteamFeaturedCategoryItem {
   linux_available: boolean
   streamingvideo_available: boolean
   header_image: string
+  type: string
   controller_support?: string
 }
 
@@ -187,20 +189,20 @@ export const searchSteamGamesByGenre = async (
 
           return {
             id: parseInt(spyGame.appid),
-            type: 0,
             name: spyGame.name,
             discounted: discountPercent > 0,
             discount_percent: discountPercent,
             original_price: originalPriceCents,
             final_price: finalPriceCents,
             currency: 'USD',
-            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`,
-            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            large_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
             windows_available: true,
             mac_available: false,
             linux_available: false,
             streamingvideo_available: false,
-            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
+            header_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+            type: 'game'
           } as SteamFeaturedCategoryItem
         })
 
@@ -232,20 +234,20 @@ export const getSteamSpyByTag = async (tag: string): Promise<SteamFeaturedCatego
 
           return {
             id: parseInt(spyGame.appid),
-            type: 0,
+            type: 'game',
             name: spyGame.name,
             discounted: discountPercent > 0,
             discount_percent: discountPercent,
             original_price: originalPriceCents,
             final_price: finalPriceCents,
             currency: 'USD',
-            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`,
-            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            large_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
             windows_available: true,
             mac_available: false,
             linux_available: false,
             streamingvideo_available: false,
-            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
+            header_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`
           } as SteamFeaturedCategoryItem
         })
     }
@@ -276,20 +278,20 @@ export const getSteamSpyTop100 = async (
 
           return {
             id: parseInt(spyGame.appid),
-            type: 0,
+            type: 'game',
             name: spyGame.name,
             discounted: discountPercent > 0,
             discount_percent: discountPercent,
             original_price: originalPriceCents,
             final_price: finalPriceCents,
             currency: 'USD',
-            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`,
-            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            large_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
             windows_available: true,
             mac_available: false,
             linux_available: false,
             streamingvideo_available: false,
-            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
+            header_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`
           } as SteamFeaturedCategoryItem
         })
     }
@@ -321,6 +323,7 @@ export interface SteamSearchResponse {
     }
     streamingvideo_available: boolean
     header_image: string
+    type: string
   }[]
 }
 
@@ -330,13 +333,13 @@ export interface SteamSearchResponse {
 export const searchSteamGames = async (query: string): Promise<SteamFeaturedCategoryItem[]> => {
   try {
     const url = `https://store.steampowered.com/api/storesearch/`
-    // cc=PL dla cen w zł, l=polish dla języka
-    const response = await fetchSteamData(url, { term: query, l: 'polish', cc: 'PL' })
+    // l=english wymusza angielski, aby upewnić się, że gry mają angielską lokalizację (lub są tak opisane)
+    // cc=PL dla cen w zł
+    const response = await fetchSteamData(url, { term: query, l: 'english', cc: 'PL' })
 
     if (response && response.items) {
       return response.items.map((item: any) => ({
         id: item.id,
-        type: 0,
         name: item.name,
         discounted: !!item.price,
         discount_percent: item.price?.discount_percent || 0,
@@ -349,7 +352,8 @@ export const searchSteamGames = async (query: string): Promise<SteamFeaturedCate
         mac_available: item.platforms?.mac || false,
         linux_available: item.platforms?.linux || false,
         streamingvideo_available: false,
-        header_image: item.header_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`
+        header_image: item.header_image || `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+        type: item.type || 'game'
       })) as SteamFeaturedCategoryItem[]
     }
 

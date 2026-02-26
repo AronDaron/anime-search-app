@@ -107,6 +107,7 @@ export const GameFilterSearchView: React.FC = () => {
                     discountPercent: item.discount_percent || 0,
                     tags: item.tags || [],
                     osWindows: item.windows_available ?? true,
+                    isDlc: item.type === 'dlc' || item.type === 'DLC',
                     releaseYear: Math.min(estimatedYear, 2026)
                 }
             })

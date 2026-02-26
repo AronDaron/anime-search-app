@@ -13,6 +13,7 @@ export interface GameData {
   originalPrice?: number
   tags?: string[]
   osWindows?: boolean
+  isDlc?: boolean
 }
 
 interface GameCardProps {
@@ -23,7 +24,9 @@ interface GameCardProps {
 export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
   const [imgError, setImgError] = useState(false)
   const [currentImg, setCurrentImg] = useState(game.capsuleImage)
-  const [repairAttempted, setRepairAttempted] = useState(false)
+  const [imgRepairAttempted, setImgRepairAttempted] = useState(false)
+  const [dlcCheckAttempted, setDlcCheckAttempted] = useState(false)
+  const [isDlc, setIsDlc] = useState(game.isDlc || false)
 
   // Formatowanie ceny na lokację polską (zł)
   const formatPrice = (p: number) => {
@@ -31,48 +34,74 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
     return `${p.toFixed(2).replace('.', ',')} zł`
   }
 
-  // Mechanizm "Auto-Naprawy" obrazka dla nowych gier (z hashem)
+  // Mechanizm detekcji DLC (raz na zamontowanie)
   useEffect(() => {
-    if (imgError && !repairAttempted) {
-      setRepairAttempted(true)
-
-      const repairImage = async () => {
+    if (!dlcCheckAttempted) {
+      const checkDlc = setTimeout(async () => {
         try {
           const details = await getSteamGameDetails(game.id)
-          if (details?.header_image) {
+          if (details && (details.type === 'dlc' || details.type === 'DLC')) {
+            setIsDlc(true)
+          }
+          setDlcCheckAttempted(true)
+        } catch (e) {
+          setDlcCheckAttempted(true)
+        }
+      }, Math.random() * 2000)
+      return () => clearTimeout(checkDlc)
+    }
+    return undefined
+  }, [game.id, dlcCheckAttempted])
+
+  // Mechanizm naprawy obrazka (wyzwalany przy imgError)
+  useEffect(() => {
+    if (imgError && !imgRepairAttempted) {
+      const repair = async () => {
+        try {
+          const details = await getSteamGameDetails(game.id)
+          if (details && details.header_image) {
             setCurrentImg(details.header_image)
             setImgError(false)
           }
+          setImgRepairAttempted(true)
         } catch (e) {
-          console.warn(`Failed to repair image for game ${game.id}`)
+          setImgRepairAttempted(true)
         }
       }
-
-      repairImage()
+      repair()
     }
-  }, [imgError, game.id, repairAttempted])
+  }, [imgError, game.id, imgRepairAttempted])
 
-  // Aktualizuj obrazek jeśli prop się zmieni
+  // Aktualizuj obrazek i status DLC jeśli prop się zmieni
   useEffect(() => {
     setCurrentImg(game.capsuleImage)
+    setIsDlc(game.isDlc || false)
     setImgError(false)
-    setRepairAttempted(false)
-  }, [game.capsuleImage])
+    setImgRepairAttempted(false)
+    setDlcCheckAttempted(false)
+  }, [game.capsuleImage, game.isDlc])
 
   return (
     <motion.div
-      className="game-card"
+      className={`game-card ${isDlc ? 'is-dlc' : ''}`}
       onClick={onClick}
       whileHover={{ scale: 1.03, y: -5 }}
       transition={{ type: 'spring', stiffness: 300 }}
+      data-testid={isDlc ? 'dlc-card' : 'game-card'}
     >
       <div className="game-card-image-wrapper">
+        {isDlc && (
+          <div className="dlc-badge" style={{ zIndex: 100 }}>
+            <span>DLC</span>
+          </div>
+        )}
         {!imgError ? (
           <img
             src={currentImg}
             alt={game.title}
             className="game-card-image"
             loading="lazy"
+            onLoad={() => console.log(`Loaded image for ${game.id}: ${currentImg}`)}
             onError={(e) => {
               const target = e.target as HTMLImageElement
               // Próbujemy różnych wariantów zanim się poddamy (dla starych struktur)
