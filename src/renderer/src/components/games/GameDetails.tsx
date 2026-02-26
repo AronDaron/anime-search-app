@@ -4,7 +4,8 @@ import {
   getSteamGameDetails,
   SteamAppDetails,
   getSteamGameExtendedStats,
-  SteamSpyGameExtended
+  SteamSpyGameExtended,
+  getSteamRealtimeCCU
 } from '../../api/steamStore'
 import {
   ArrowLeft,
@@ -53,6 +54,7 @@ export const GameDetails: React.FC = () => {
 
   // Extended Stats State
   const [extraStats, setExtraStats] = useState<SteamSpyGameExtended | null>(null)
+  const [realtimeCCU, setRealtimeCCU] = useState<number | null>(null)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
 
   useEffect(() => {
@@ -85,11 +87,18 @@ export const GameDetails: React.FC = () => {
           setReviewsResponse(reviewsData)
         }
 
-        // Fetch Extended Stats (CCU, Playtime)
+        // Fetch Extended Stats & Realtime CCU
         setIsStatsLoading(true)
-        const statsData = await getSteamGameExtendedStats(id)
+        const [statsData, ccuData] = await Promise.all([
+          getSteamGameExtendedStats(id),
+          getSteamRealtimeCCU(id)
+        ])
+
         if (statsData) {
           setExtraStats(statsData)
+        }
+        if (ccuData !== undefined) {
+          setRealtimeCCU(ccuData)
         }
         setIsStatsLoading(false)
       } catch (err) {
@@ -209,7 +218,7 @@ export const GameDetails: React.FC = () => {
                 <div className="small-spinner"></div>
               ) : (
                 <div className="stat-value neon-text-green">
-                  {extraStats?.ccu?.toLocaleString() || '0'}
+                  {(realtimeCCU ?? extraStats?.ccu ?? 0).toLocaleString()}
                 </div>
               )}
             </div>

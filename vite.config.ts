@@ -32,6 +32,11 @@ export default defineConfig({
         target: 'https://steamspy.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/steamspy/, '')
+      },
+      '/steam-api': {
+        target: 'https://api.steampowered.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/steam-api/, '')
       }
     }
   }

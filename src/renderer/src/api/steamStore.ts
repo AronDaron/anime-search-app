@@ -378,3 +378,21 @@ export const getSteamGameExtendedStats = async (
     return null
   }
 }
+
+/**
+ * Pobiera liczbę graczy online w czasie rzeczywistym bezpośrednio z oficjalnego API Steam.
+ */
+export const getSteamRealtimeCCU = async (appId: string | number): Promise<number> => {
+  try {
+    const url = `https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/`
+    const response = await fetchSteamData(url, { appid: appId.toString() })
+
+    if (response && response.response && response.response.result === 1) {
+      return response.response.player_count as number
+    }
+    return 0
+  } catch (e) {
+    console.error(`Błąd podczas pobierania CCU w czasie rzeczywistym (appid: ${appId}):`, e)
+    return 0
+  }
+}

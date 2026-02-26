@@ -31,6 +31,7 @@ export const fetchSteamData = async (endpointUrl: string, params: Record<string,
     const proxyUrl = fullUrl
       .replace(STEAM_STORE_URL, '/steam-store')
       .replace('https://steamspy.com', '/steamspy')
+      .replace('https://api.steampowered.com', '/steam-api')
     console.log('[SteamAPI] Pobieranie przez Vite Proxy:', proxyUrl)
 
     const response = await fetch(proxyUrl)
