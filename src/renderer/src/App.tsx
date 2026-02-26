@@ -10,10 +10,11 @@ import { SeasonsView } from './components/anime/SeasonsView'
 import { FilterSearchView } from './components/anime/FilterSearchView'
 import { AISearchView } from './views/AISearchView'
 import { GamesHome } from './components/games/GamesHome'
-import { GameGenresView } from './components/games/GameGenresView'
 import { GameDetails } from './components/games/GameDetails'
+import { GameGenresView } from './components/games/GameGenresView'
 import { GameSearch } from './components/games/GameSearch'
 import { GameFilterSearchView } from './components/games/GameFilterSearchView'
+import { GamesPriceTieredView } from './components/games/GamesPriceTieredView'
 import './assets/index.css'
 
 // Force TS server refresh
@@ -66,10 +67,10 @@ function App(): React.JSX.Element {
           />
           <Route path="/games/ai-search" element={<AISearchView domain="games" />} />
           <Route path="/games/bestsellers" element={<GamesHome title="Bestsellery Gier" />} />
-          <Route path="/games/deals" element={<GamesHome title="Promocje Steam" />} />
+          <Route path="/games/deals" element={<GamesPriceTieredView title="Promocje Steam" categoryType="deals" />} />
           <Route path="/games/genres" element={<GameGenresView />} />
           <Route path="/games/filter-search" element={<GameFilterSearchView />} />
-          <Route path="/games/new" element={<GamesHome title="Nowości na Steam" />} />
+          <Route path="/games/new" element={<GamesPriceTieredView title="Nowości na Steam" categoryType="new" />} />
           {/* Dynamic route must be last in the /games group */}
           <Route path="/games/:id" element={<GameDetails />} />
         </Routes>
