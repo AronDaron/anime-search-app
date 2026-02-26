@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Filter, Loader2, DollarSign, TrendingUp, Sparkles } from 'lucide-react'
 import { GameCard, GameData } from './GameCard'
-import { getSteamFeaturedCategories, getSteamSpyByTag, searchSteamGamesByGenre, SteamFeaturedCategoryItem } from '../../api/steamStore'
+import { getSteamStoreFeaturedCategories, getSteamSpyByTag, searchSteamGamesByGenre, SteamFeaturedCategoryItem } from '../../api/steamStore'
 import '../shared/Grid.css'
 import './GamesPriceTieredView.css'
 
@@ -97,12 +97,12 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
 
             if (selectedGenre === 'All') {
                 if (categoryType === 'new') {
-                    const featured = await getSteamFeaturedCategories()
+                    const featured = await getSteamStoreFeaturedCategories()
                     const storeGames = featured?.new_releases?.items || []
                     const spyNew = await getSteamSpyByTag('newreleases')
                     allItems = [...storeGames, ...spyNew]
                 } else {
-                    const featured = await getSteamFeaturedCategories()
+                    const featured = await getSteamStoreFeaturedCategories()
                     const storeSpecials = featured?.specials?.items || []
                     const spySpecials = await getSteamSpyByTag('specials')
                     allItems = [...storeSpecials, ...spySpecials]

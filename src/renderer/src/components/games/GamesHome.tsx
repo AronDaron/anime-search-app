@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameCard, GameData } from './GameCard'
-import { getSteamFeaturedCategories, SteamFeaturedCategoryItem } from '../../api/steamStore'
+import { getSteamStoreFeaturedCategories, searchSteamGamesByGenre, getSteamSpyTop100, SteamFeaturedCategoryItem } from '../../api/steamStore'
 import './GamesHome.css'
 
 export interface GamesHomeProps {
@@ -18,27 +18,35 @@ export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyró�
         const fetchGames = async () => {
             setIsLoading(true);
             try {
-                const categories = await getSteamFeaturedCategories();
-                if (!categories || !isMounted) return;
+                const categories = await getSteamStoreFeaturedCategories();
+                if (!isMounted) return;
 
                 let selectedItems: SteamFeaturedCategoryItem[] = [];
 
                 if (title === 'Bestsellery Gier') {
-                    selectedItems = categories.top_sellers?.items || [];
+                    // Start with Steam Store top sellers
+                    const steamTopSellers = categories?.top_sellers?.items || [];
+
+                    // Add SteamSpy Top 100 for more results
+                    const spyTopSellers = await getSteamSpyTop100('top100in2weeks');
+
+                    selectedItems = [...steamTopSellers, ...spyTopSellers];
                 } else if (title === 'Promocje Steam') {
-                    selectedItems = categories.specials?.items || [];
+                    selectedItems = categories?.specials?.items || [];
                 } else if (title === 'Nowości na Steam') {
-                    selectedItems = categories.new_releases?.items || [];
+                    selectedItems = categories?.new_releases?.items || [];
                 } else {
                     // Domyślnie na stronie głównej gier miksujemy duże nagłówki z bestsellerami
-                    const topItems = categories.top_sellers?.items?.slice(0, 10) || [];
+                    const featureItems = categories?.['0']?.items || categories?.large_capsules?.items || [];
+                    const topSellers = categories?.top_sellers?.items || [];
 
-                    // Fallback to various popular sections if '0' is missing
-                    const featureItems = categories['0']?.items || categories.large_capsules?.items || [];
-                    selectedItems = [...featureItems, ...topItems];
+                    // Dodatkowo pobieramy gry z tagiem "Anime" dla unikalnego charakteru aplikacji
+                    const animeGames = await searchSteamGamesByGenre('Anime');
+
+                    selectedItems = [...featureItems, ...topSellers, ...animeGames.slice(0, 20)];
                 }
 
-                // Globalne usunięcie duplikatów i uszkodzonych ofert bez ID, by zapobiec usterką w kluczach i renderowaniu 
+                // Globalne usunięcie duplikatów i uszkodzonych ofert bez ID
                 const uniqueItems = selectedItems.filter(
                     (item, index, self) => item?.id && index === self.findIndex((t) => t?.id === item?.id)
                 );
@@ -50,7 +58,7 @@ export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyró�
                     price: item.final_price ? item.final_price / 100 : 0,
                     originalPrice: item.original_price ? item.original_price / 100 : undefined,
                     discountPercent: item.discount_percent || 0,
-                    tags: [], // Tags not available in featured categories summary
+                    tags: [],
                     osWindows: item.windows_available ?? true,
                 }));
 

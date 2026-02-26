@@ -112,7 +112,7 @@ export interface SteamFeaturedCategories {
 /**
  * Zwraca dynamiczne listy gier z głównej strony Steam (Bestsellery, Nowości, Promocje).
  */
-export const getSteamFeaturedCategories = async (): Promise<SteamFeaturedCategories | null> => {
+export const getSteamStoreFeaturedCategories = async (): Promise<SteamFeaturedCategories | null> => {
   try {
     const url = `https://store.steampowered.com/api/featuredcategories`
     // Waluta: PLN
@@ -229,6 +229,50 @@ export const getSteamSpyByTag = async (tag: string): Promise<SteamFeaturedCatego
     return []
   } catch (e) {
     console.error(`Błąd podczas pobierania kategorii ${tag} ze SteamSpy:`, e)
+    return []
+  }
+}
+
+/**
+ * Pobiera Top 100 gier z ostatnich 2 tygodni lub wszechczasów ze SteamSpy.
+ */
+export const getSteamSpyTop100 = async (
+  type: 'top100in2weeks' | 'top100forever' = 'top100in2weeks'
+): Promise<SteamFeaturedCategoryItem[]> => {
+  try {
+    const url = `https://steamspy.com/api.php`
+    const response = await fetchSteamData(url, { request: type })
+
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      return Object.values(response)
+        .filter((g: any) => g && g.appid)
+        .map((spyGame: any) => {
+          const finalPriceCents = Number(spyGame.price || 0)
+          const discountPercent = Number(spyGame.discount || 0)
+          const originalPriceCents = Number(spyGame.initialprice || finalPriceCents)
+
+          return {
+            id: parseInt(spyGame.appid),
+            type: 0,
+            name: spyGame.name,
+            discounted: discountPercent > 0,
+            discount_percent: discountPercent,
+            original_price: originalPriceCents,
+            final_price: finalPriceCents,
+            currency: 'USD',
+            large_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`,
+            small_capsule_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+            windows_available: true,
+            mac_available: false,
+            linux_available: false,
+            streamingvideo_available: false,
+            header_image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${spyGame.appid}/header.jpg`
+          } as SteamFeaturedCategoryItem
+        })
+    }
+    return []
+  } catch (e) {
+    console.error(`Błąd podczas pobierania ${type} ze SteamSpy:`, e)
     return []
   }
 }
