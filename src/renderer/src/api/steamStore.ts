@@ -65,6 +65,7 @@ export interface SteamSpyGameExtended {
   initialprice: string
   discount: string
   ccu: number
+  tags: Record<string, number>
 }
 
 /**
@@ -394,5 +395,152 @@ export const getSteamRealtimeCCU = async (appId: string | number): Promise<numbe
   } catch (e) {
     console.error(`Błąd podczas pobierania CCU w czasie rzeczywistym (appid: ${appId}):`, e)
     return 0
+  }
+}
+
+/**
+ * Lista szerokich tagów, które powinny mieć mniejszy wpływ na podobieństwo.
+ */
+const BROAD_TAGS = new Set([
+  'Action', 'Adventure', 'RPG', 'Strategy', 'Indie', 'Singleplayer', 'Multiplayer',
+  '2D', '3D', 'Casual', 'Simulation', 'Early Access', 'Free to Play', 'Co-op',
+  'Anime', 'Shooter', 'Atmospheric', 'Story Rich', 'Violent', 'Gore', 'Great Soundtrack',
+  'Difficult', 'Open World', 'Fantasy', 'Sci-fi', 'Funny'
+]);
+
+/**
+ * Oblicza podobieństwo między dwiema grami na podstawie ich tagów.
+ */
+const calculateSimilarity = (
+  tagsA: Record<string, number>,
+  tagsB: Record<string, number>
+): number => {
+  const keysA = Object.keys(tagsA)
+  const keysB = Object.keys(tagsB)
+
+  if (keysA.length === 0 || keysB.length === 0) return 0
+
+  let score = 0
+  const commonTags = keysA.filter((tag) => keysB.includes(tag))
+
+  if (commonTags.length === 0) return 0
+
+  commonTags.forEach((tag) => {
+    // Bazujemy na liczbie głosów (logarytmicznie)
+    let weightA = Math.log10(tagsA[tag] + 1)
+    let weightB = Math.log10(tagsB[tag] + 1)
+    
+    // Kara dla szerokich tagów - redukujemy ich znaczenie o 90%
+    if (BROAD_TAGS.has(tag)) {
+      weightA *= 0.1
+      weightB *= 0.1
+    }
+
+    score += weightA * weightB
+  })
+
+  return score
+}
+
+/**
+ * Zwraca listę gier podobnych do podanego appId.
+ */
+export const getSimilarGames = async (
+  appId: string | number
+): Promise<SteamFeaturedCategoryItem[]> => {
+  try {
+    const baseGameStats = await getSteamGameExtendedStats(appId)
+    let currentTags = baseGameStats?.tags || {}
+    let sortedTags: string[] = []
+
+    if (Object.keys(currentTags).length > 0) {
+      // Priorytetyzujemy tagi niszowe (te, które nie są w BROAD_TAGS)
+      // Nawet jeśli mają mniej głosów, są lepszymi indykatorami podobieństwa
+      const entries = Object.entries(currentTags)
+      
+      sortedTags = entries
+        .sort(([tagA, valA], [tagB, valB]) => {
+          const isBroadA = BROAD_TAGS.has(tagA)
+          const isBroadB = BROAD_TAGS.has(tagB)
+          
+          if (isBroadA && !isBroadB) return 1
+          if (!isBroadA && isBroadB) return -1
+          return valB - valA // Przy tym samym typie (niszowy/szeroki) decyduje popularność
+        })
+        .slice(0, 5)
+        .map(([tag]) => tag)
+    } 
+    else {
+      const details = await getSteamGameDetails(appId)
+      if (details && details.genres) {
+        sortedTags = details.genres.map(g => g.description)
+        details.genres.forEach(g => {
+          currentTags[g.description] = 100 
+        })
+      }
+    }
+
+    if (sortedTags.length === 0) return []
+
+    const candidateFrequency: Map<number, { item: SteamFeaturedCategoryItem; count: number }> =
+      new Map()
+
+    const fetchPromises = sortedTags.map((tag) => getSteamSpyByTag(tag))
+    const results = await Promise.all(fetchPromises)
+
+    results.forEach((gameList) => {
+      gameList.forEach((game) => {
+        if (game.id.toString() !== appId.toString()) {
+          const existing = candidateFrequency.get(game.id)
+          if (existing) {
+            existing.count++
+          } else {
+            candidateFrequency.set(game.id, { item: game, count: 1 })
+          }
+        }
+      })
+    })
+
+    const prioritizedCandidates = Array.from(candidateFrequency.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 60)
+    
+    const scoredCandidates = await Promise.all(
+      prioritizedCandidates.map(async ({ item }) => {
+        const stats = await getSteamGameExtendedStats(item.id)
+        if (!stats || !stats.tags) return { ...item, similarity: 0 }
+        
+        const similarity = calculateSimilarity(currentTags, stats.tags)
+        return { ...item, similarity }
+      })
+    )
+
+    let finalResults = scoredCandidates
+      .filter((g) => g.similarity > 0)
+      .sort((a, b) => b.similarity - a.similarity)
+      .map(({ similarity, ...game }) => game as SteamFeaturedCategoryItem)
+
+    // 4. Mechanizm FALLBACK
+    if (finalResults.length < 6 && sortedTags.length > 0) {
+      // Wybieramy najbardziej unikalny (ostatni z naszych wybranych topowych) tag do fallbacku
+      // Zakładając, że na początku są niszowe
+      const nicheTag = sortedTags.find(t => !BROAD_TAGS.has(t)) || sortedTags[0]
+      const fallbackGames = await getSteamSpyByTag(nicheTag)
+      
+      const existingIds = new Set(finalResults.map(r => r.id))
+      existingIds.add(Number(appId))
+
+      const additionalGames = fallbackGames
+        .filter(g => !existingIds.has(g.id))
+        .slice(0, 12 - finalResults.length)
+      
+      finalResults = [...finalResults, ...additionalGames]
+    }
+
+    return finalResults.slice(0, 12)
+
+  } catch (e) {
+    console.error('Błąd podczas pobierania podobnych gier:', e)
+    return []
   }
 }

@@ -5,7 +5,9 @@ import {
   SteamAppDetails,
   getSteamGameExtendedStats,
   SteamSpyGameExtended,
-  getSteamRealtimeCCU
+  getSteamRealtimeCCU,
+  getSimilarGames,
+  SteamFeaturedCategoryItem
 } from '../../api/steamStore'
 import {
   ArrowLeft,
@@ -40,7 +42,7 @@ export const GameDetails: React.FC = () => {
   const [reviewsResponse, setReviewsResponse] = useState<SteamReviewResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'requirements' | 'ai-review'>('requirements')
+  const [activeTab, setActiveTab] = useState<'requirements' | 'ai-review' | 'similar'>('requirements')
   const [activeMedia, setActiveMedia] = useState<{
     type: 'video' | 'image'
     src: string
@@ -57,10 +59,24 @@ export const GameDetails: React.FC = () => {
   const [realtimeCCU, setRealtimeCCU] = useState<number | null>(null)
   const [isStatsLoading, setIsStatsLoading] = useState(false)
 
+  // Similar Games State
+  const [similarGames, setSimilarGames] = useState<SteamFeaturedCategoryItem[]>([])
+  const [isSimilarLoading, setIsSimilarLoading] = useState(false)
+
   useEffect(() => {
     const fetchDetails = async () => {
       if (!id) return
       setIsLoading(true)
+      setError(null)
+      // Reset states for new game
+      setGame(null)
+      setReviewsResponse(null)
+      setAiSummary(null)
+      setExtraStats(null)
+      setRealtimeCCU(null)
+      setSimilarGames([])
+      setActiveTab('requirements')
+      window.scrollTo(0, 0)
       try {
         const [data, reviewsData] = await Promise.all([
           getSteamGameDetails(id),
@@ -147,6 +163,26 @@ export const GameDetails: React.FC = () => {
       setIsAiLoading(false)
     }
   }
+
+  const handleLoadSimilarGames = async () => {
+    if (!id || similarGames.length > 0 || isSimilarLoading) return
+
+    setIsSimilarLoading(true)
+    try {
+      const data = await getSimilarGames(id)
+      setSimilarGames(data)
+    } catch (err) {
+      console.error('Błąd pobierania podobnych gier:', err)
+    } finally {
+      setIsSimilarLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'similar') {
+      handleLoadSimilarGames()
+    }
+  }, [activeTab])
 
   if (isLoading) {
     return (
@@ -417,6 +453,12 @@ export const GameDetails: React.FC = () => {
               >
                 <Sparkles size={14} /> Werdykt AI
               </button>
+              <button
+                className={`game-tab-minimal similar-tab ${activeTab === 'similar' ? 'active' : ''}`}
+                onClick={() => setActiveTab('similar')}
+              >
+                <Users size={14} /> Podobne Gry
+              </button>
             </div>
           </div>
 
@@ -564,6 +606,45 @@ export const GameDetails: React.FC = () => {
                         </ul>
                       </div>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'similar' && (
+              <div className="tab-similar-section glass-panel">
+                <h2 className="tab-title">Relatywnie Podobne Tytuły (Smart Tag Match)</h2>
+
+                {isSimilarLoading && (
+                  <div className="similar-loading-box">
+                    <div className="neon-spinner green"></div>
+                    <p>Analizowanie powiązań między tagami...</p>
+                  </div>
+                )}
+
+                {!isSimilarLoading && similarGames.length === 0 && (
+                  <div className="no-data-msg">
+                    Nie znaleziono wystarczająco podobnych gier.
+                  </div>
+                )}
+
+                {!isSimilarLoading && similarGames.length > 0 && (
+                  <div className="similar-games-grid">
+                    {similarGames.map((simGame) => (
+                      <div
+                        key={simGame.id}
+                        className="similar-game-mini-card"
+                        onClick={() => navigate(`/games/${simGame.id}`)}
+                      >
+                        <img src={simGame.header_image} alt={simGame.name} />
+                        <div className="card-overlay">
+                          <span className="game-name">{simGame.name}</span>
+                          {simGame.discount_percent > 0 && (
+                            <span className="game-discount">-{simGame.discount_percent}%</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
