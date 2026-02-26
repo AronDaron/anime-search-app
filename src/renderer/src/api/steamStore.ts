@@ -8,6 +8,8 @@ export interface SteamAppDetails {
   background: string
   background_raw: string
   short_description: string
+  about_the_game: string
+  detailed_description: string
   supported_languages: string
   pc_requirements: {
     minimum?: string
