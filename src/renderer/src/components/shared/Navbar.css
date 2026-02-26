@@ -110,7 +110,7 @@
 .nav-btn:hover,
 .nav-btn.active {
   background: rgba(0, 255, 255, 0.2);
-  border-color: var(--neon-cyan);
+  border-color: var(--accent-cyan);
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
   color: white;
 }
@@ -142,7 +142,7 @@
   font-size: 1.8rem;
   font-weight: 900;
   letter-spacing: 2px;
-  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-green) 100%);
+  background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-green) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
