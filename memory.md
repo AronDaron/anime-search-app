@@ -65,7 +65,7 @@ Miejsce gdzie znajdują się absolutnie wszystkie pliki wyświetlane użytkownik
 #### Zmienne, Kolory i Główne Komponenty Aplikacji
 
 - `index.css`: Główny plik resetu. Na poziomie globalnym wymusza wsparcie Dark-Theme. Posiada wdrożone kolory zmiennych (CSS variables) gotowe do wsparcia hubów: Anime (Cyan), Gry (Green). Wykorzystuje `.theme-anime` i `.theme-games` do globalnego nadpisywania barw (np. świecenia neonów).
-- `Navbar.tsx` / `Navbar.css` (`src/renderer/src/components/shared/`): Interaktywny pasek top-level. W locie podmienia układ przycisków i kolory (Cyan na Green) decydując na podstawie ścieżki `/anime` lub `/games`. Zawiera wbudowane pod-menu, pole inteligentnego wyszukiwania AI z dynamicznym promptem i nawigację zintegrowaną do rozdzielnych list. W sekcji gier kolejność przycisków to: Wyszukiwanie AI, Wyszukiwanie, Gatunki, Bestsellery, Promocje, Nowości, Główna.
+- `Navbar.tsx` / `Navbar.css` (`src/renderer/src/components/shared/`): Interaktywny pasek top-level. Zawiera jednolite, dwukolorowe logo **NEO** z gradientem (cyjan-zieleń) oraz nowoczesny **przełącznik segmentowy** (Anime/Gry) w formie pigułki z animowanym sliderem. Dynamicznie podmienia układ przycisków i akcenty kolorystyczne na podstawie aktywnej sekcji. Posiada wbudowane pole inteligentnego wyszukiwania AI oraz nawigację dostosowaną do wybranej domeny.
 - `PlaceholderSection.tsx` (`src/renderer/src/components/shared/`): Uniwersalny, adaptatywny wizualnie komponent używany jako atrapa do podglądu ścieżki `games`, przed wdrożeniem finalnego kodu dla tej subsekcji.
 
 #### Komponenty Modułu Anime (`src/renderer/src/components/anime/`)
