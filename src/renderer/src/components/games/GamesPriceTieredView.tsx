@@ -12,16 +12,11 @@ interface GamesPriceTieredViewProps {
     categoryType: 'new' | 'deals'
 }
 
+import { GAME_GENRES as ALL_GENRES } from '../../constants/gameGenres'
+
 const GAME_GENRES = [
     { label: 'Wszystkie', id: 'All' },
-    { label: 'Akcja', id: 'Action' },
-    { label: 'RPG', id: 'RPG' },
-    { label: 'Strategia', id: 'Strategy' },
-    { label: 'Przygoda', id: 'Adventure' },
-    { label: 'Indie', id: 'Indie' },
-    { label: 'Symulacje', id: 'Simulation' },
-    { label: 'Casual', id: 'Casual' },
-    { label: 'Horror', id: 'Horror' }
+    ...ALL_GENRES
 ]
 
 const INITIAL_LOAD_COUNT = 20

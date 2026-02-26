@@ -6,22 +6,7 @@ import { searchSteamGamesByGenre } from '../../api/steamStore'
 import '../shared/Grid.css'
 import './GamesHome.css'
 
-const GAME_GENRES = [
-    { label: 'Akcja', id: 'Action' },
-    { label: 'RPG', id: 'RPG' },
-    { label: 'Strategia', id: 'Strategy' },
-    { label: 'Przygoda', id: 'Adventure' },
-    { label: 'Indie', id: 'Indie' },
-    { label: 'Symulacje', id: 'Simulation' },
-    { label: 'Wyścigi', id: 'Racing' },
-    { label: 'Sportowe', id: 'Sports' },
-    { label: 'Casual', id: 'Casual' },
-    { label: 'MMO', id: 'Massively Multiplayer' },
-    { label: 'Survival', id: 'Survival' },
-    { label: 'Horror', id: 'Horror' },
-    { label: 'Otwarty Świat', id: 'Open World' },
-    { label: 'FPS', id: 'FPS' }
-]
+import { GAME_GENRES } from '../../constants/gameGenres'
 
 const INITIAL_LIMIT = 30
 const INCREMENT = 20

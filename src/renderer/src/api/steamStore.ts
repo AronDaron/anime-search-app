@@ -139,7 +139,19 @@ export const searchSteamGamesByGenre = async (
 ): Promise<SteamFeaturedCategoryItem[]> => {
   try {
     const url = `https://steamspy.com/api.php`
-    const response = await fetchSteamData(url, { request: 'genre', genre: genre })
+    
+    // Lista podstawowych gatunków obsługiwanych przez request=genre w SteamSpy
+    const spyGenres = [
+      'Action', 'Adventure', 'RPG', 'Strategy', 'Indie', 'Simulation', 
+      'Racing', 'Sports', 'Casual', 'Massively Multiplayer', 'Early Access'
+    ]
+
+    const isPrimaryGenre = spyGenres.includes(genre)
+    const params: Record<string, string> = isPrimaryGenre 
+      ? { request: 'genre', genre: genre } 
+      : { request: 'tag', tag: genre }
+
+    const response = await fetchSteamData(url, params)
 
     if (response && typeof response === 'object' && !Array.isArray(response)) {
       // Mapujemy WSZYSTKIE gry z gatunku (bez slice)

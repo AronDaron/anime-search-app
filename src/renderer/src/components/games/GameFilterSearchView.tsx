@@ -8,18 +8,7 @@ import '../shared/Grid.css'
 import '../anime/FilterSearchView.css' // Base layout styles
 import './GameFilterSearchView.css'   // Specialized game filter styles
 
-const GAME_GENRES = [
-    { label: 'Akcja', id: 'Action' },
-    { label: 'RPG', id: 'RPG' },
-    { label: 'Strategia', id: 'Strategy' },
-    { label: 'Przygoda', id: 'Adventure' },
-    { label: 'Indie', id: 'Indie' },
-    { label: 'Symulacje', id: 'Simulation' },
-    { label: 'Wyścigi', id: 'Racing' },
-    { label: 'Sportowe', id: 'Sports' },
-    { label: 'Casual', id: 'Casual' },
-    { label: 'MMO', id: 'Massively Multiplayer' }
-]
+import { GAME_GENRES } from '../../constants/gameGenres'
 
 const INITIAL_DISPLAY_LIMIT = 40
 const SCROLL_INCREMENT = 20

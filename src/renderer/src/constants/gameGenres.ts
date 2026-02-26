@@ -1,0 +1,45 @@
+export interface GameGenre {
+  label: string
+  id: string
+}
+
+export const GAME_GENRES: GameGenre[] = [
+  { label: 'Akcja', id: 'Action' },
+  { label: 'RPG', id: 'RPG' },
+  { label: 'Strategia', id: 'Strategy' },
+  { label: 'Przygoda', id: 'Adventure' },
+  { label: 'Indie', id: 'Indie' },
+  { label: 'Symulacje', id: 'Simulation' },
+  { label: 'Wyścigi', id: 'Racing' },
+  { label: 'Sportowe', id: 'Sports' },
+  { label: 'Casual', id: 'Casual' },
+  { label: 'MMO', id: 'Massively Multiplayer' },
+  { label: 'Survival', id: 'Survival' },
+  { label: 'Horror', id: 'Horror' },
+  { label: 'Otwarty Świat', id: 'Open World' },
+  { label: 'FPS', id: 'FPS' },
+  { label: 'Anime', id: 'Anime' },
+  { label: 'Cyberpunk', id: 'Cyberpunk' },
+  { label: 'Soulslike', id: 'Soulslike' },
+  { label: 'Metroidvania', id: 'Metroidvania' },
+  { label: 'Roguelike', id: 'Roguelike' },
+  { label: 'Visual Novel', id: 'Visual Novel' },
+  { label: 'Hack and Slash', id: 'Hack and Slash' },
+  { label: 'Zombies', id: 'Zombies' },
+  { label: 'Sci-fi', id: 'Sci-fi' },
+  { label: 'Fantasy', id: 'Fantasy' },
+  { label: 'Platformówka', id: 'Platformer' },
+  { label: 'Bijatyki', id: 'Fighting' },
+  { label: 'Sandbox', id: 'Sandbox' },
+  { label: 'Stealth', id: 'Stealth' },
+  { label: 'Taktyczne', id: 'Tactical' },
+  { label: 'Karciane', id: 'Card Game' },
+  { label: 'VR', id: 'VR' },
+  { label: 'Tower Defense', id: 'Tower Defense' },
+  { label: 'City Builder', id: 'City Builder' },
+  { label: 'Zarządzanie', id: 'Management' },
+  { label: 'Tajemnica', id: 'Mystery' },
+  { label: 'Point & Click', id: 'Point & Click' },
+  { label: 'Rytmiczne', id: 'Rhythm' },
+  { label: 'Turowe', id: 'Turn-Based' }
+]
