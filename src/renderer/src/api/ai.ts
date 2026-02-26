@@ -317,7 +317,7 @@ export const analyzePlayerProfile = async (
          3. 'verdictTag': Szybki tag-punchline (np. "Syndrom Sztokholmski").`
 
   const payload = {
-    model: 'anthropic/claude-sonnet-4.6',
+    model: 'google/gemini-3.1-pro-preview',
     response_format: { type: 'json_object' },
     messages: [
       {
