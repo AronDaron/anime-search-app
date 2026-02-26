@@ -140,10 +140,16 @@ export const translateDescriptionToPolish = async (
   }
 }
 
+export interface AIAnimeReviewSummary {
+  verdict: string
+  pros: string[]
+  cons: string[]
+}
+
 export const summarizeReviews = async (
   reviews: string[],
   apiKey: string
-): Promise<string | null> => {
+): Promise<AIAnimeReviewSummary | null> => {
   if (!apiKey) {
     console.warn('Brak klucza API OpenRouter do streszczania recenzji.')
     return null
@@ -155,18 +161,22 @@ export const summarizeReviews = async (
 
   const payload = {
     model: 'google/gemini-3-flash-preview',
+    response_format: { type: 'json_object' },
     messages: [
       {
         role: 'system',
-        content: `Jesteś ekspertem od anime. Poniżej dostaniesz listę recenzji danego widowiska napisanych przez obumarłą społeczność fanów po angielsku. 
-                Twoim zadaniem jest stworzenie JEDNEGO spójnego, obiektywnego i krótkiego podsumowania tych opinii w języku polskim ("Co lidzie sądzą o tym anime?").
+        content: `Jesteś ekspertem od anime. Poniżej dostaniesz listę recenzji danego widowiska napisanych przez społeczność fanów po angielsku. 
+                Twoim zadaniem jest stworzenie JEDNEGO spójnego, obiektywnego i krótkiego podsumowania tych opinii w języku polskim w formacie JSON.
                 
                 Zasady:
-                - Podsumuj NAJWAŻNIEJSZE wady i zalety pojawiające się w tych recenzjach.
                 - Nie spoiluj fabuły!
-                - Zwróć tylko wygenerowany tekst w języku polskim. Możesz używać znaczników HTML <b> dla pogrubień, <i> dla kursywy i <br> dla nowych linii (ok. 2-3 zgrabne akapity to idealna wielkość).
-                - Nie odzywaj się "Cześć" ani nie pisz "Oto podsumowanie". Od razu przejdź do rzeczy.
-                - Jeśli recenzje są bardzo skrajne, napisz, że "zdania są mocno podzielone".`
+                - Odpowiedz WYŁĄCZNIE surowym obiektem JSON o strukturze:
+                {
+                  "verdict": "Krótkie (2-3 zdania) podsumowanie ogólnego konsensusu w języku polskim.",
+                  "pros": ["Tablica 3-5 najważniejszych zalet w języku polskim"],
+                  "cons": ["Tablica 3-5 najważniejszych wad w języku polskim"]
+                }
+                - Jeśli recenzje są bardzo skrajne, napisz w 'verdict', że "zdania są mocno podzielone".`
       },
       {
         role: 'user',
@@ -197,7 +207,12 @@ export const summarizeReviews = async (
     const content = data.choices?.[0]?.message?.content
     if (!content) return null
 
-    return content.trim()
+    try {
+      return JSON.parse(content) as AIAnimeReviewSummary
+    } catch (parseError) {
+      console.error('Błąd parsowania JSON AI Review:', parseError)
+      return null
+    }
   } catch (e) {
     console.error('Błąd przetwarzania odpowiedzi z API tłumacza (Streszczenia):', e)
     return null

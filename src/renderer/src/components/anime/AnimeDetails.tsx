@@ -6,7 +6,7 @@ import {
   AnimeDetailsData,
   JikanEpisode
 } from '../../api/anilist'
-import { translateDescriptionToPolish, summarizeReviews } from '../../api/ai'
+import { translateDescriptionToPolish, summarizeReviews, AIAnimeReviewSummary } from '../../api/ai'
 import {
   Sparkles,
   MessageSquare,
@@ -15,7 +15,9 @@ import {
   TrendingUp,
   BarChart2,
   Activity,
-  Trophy
+  Trophy,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -139,7 +141,7 @@ export const AnimeDetails: React.FC = () => {
   const [isTranslating, setIsTranslating] = useState(false)
 
   // AI Reviews states
-  const [aiReviewSummary, setAiReviewSummary] = useState<string | null>(null)
+  const [aiReviewSummary, setAiReviewSummary] = useState<AIAnimeReviewSummary | null>(null)
   const [isSummarizing, setIsSummarizing] = useState(false)
 
   useEffect(() => {
@@ -192,12 +194,17 @@ export const AnimeDetails: React.FC = () => {
 
         // Try to get AI Review Summary
         if (response.Media.reviews?.edges && response.Media.reviews.edges.length > 0) {
-          let cachedSummary: string | null = null
+          let cachedSummary: AIAnimeReviewSummary | null = null
           if (window.api && window.api.db) {
             try {
               const cached = await window.api.db.getReviewSummary(response.Media.id)
               if (cached && cached.summary_pl) {
-                cachedSummary = cached.summary_pl
+                try {
+                  const parsed = JSON.parse(cached.summary_pl)
+                  cachedSummary = parsed
+                } catch {
+                  cachedSummary = null
+                }
               }
             } catch (err) {
               console.error('Failed to fetch review summary from DB:', err)
@@ -224,7 +231,10 @@ export const AnimeDetails: React.FC = () => {
                       // Save to DB Cache
                       if (window.api && window.api.db) {
                         try {
-                          await window.api.db.addReviewSummary(response.Media.id, summary)
+                          await window.api.db.addReviewSummary(
+                            response.Media.id,
+                            JSON.stringify(summary)
+                          )
                         } catch (err) {
                           console.error('Failed to save review summary to DB:', err)
                         }
@@ -311,25 +321,16 @@ export const AnimeDetails: React.FC = () => {
 
   return (
     <div className="anime-details-container fade-in">
-      <div
-        className="details-top-actions"
-        style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}
-      >
+      <div className="anime-top-bar">
         <button
-          className="nav-btn back-btn"
+          className="anime-back-btn"
           onClick={() => navigate(-1)}
-          style={{ marginBottom: 0 }}
         >
           &larr; Wróć
         </button>
         <button
-          className={`nav-btn fav-btn ${isFavorite ? 'active' : ''}`}
+          className={`anime-fav-btn ${isFavorite ? 'active' : ''}`}
           onClick={toggleFavorite}
-          style={{
-            background: isFavorite ? 'rgba(255, 0, 127, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-            borderColor: isFavorite ? '#ff007f' : 'rgba(255, 255, 255, 0.3)',
-            marginBottom: 0
-          }}
         >
           {isFavorite ? '♥ W ulubionych' : '♡ Dodaj do ulubionych'}
         </button>
@@ -1038,28 +1039,45 @@ export const AnimeDetails: React.FC = () => {
                   </p>
                 </div>
               ) : aiReviewSummary ? (
-                <div
-                  className="ai-summary-result glass-panel-inner fade-in"
-                  style={{
-                    padding: '1.5rem',
-                    borderLeft: '4px solid var(--neon-purple)',
-                    background: 'rgba(191,0,255,0.05)'
-                  }}
-                >
-                  <p
-                    style={{ lineHeight: '1.7', margin: 0 }}
-                    dangerouslySetInnerHTML={{ __html: aiReviewSummary }}
-                  ></p>
+                <div className="ai-report-container fade-in">
+                  <p className="ai-verdict">
+                    <strong>Werdykt AI:</strong> {aiReviewSummary.verdict}
+                  </p>
+
+                  <div className="ai-pros-cons-grid">
+                    <div className="ai-box play-box">
+                      <h3>Zalety</h3>
+                      <ul>
+                        {aiReviewSummary.pros.map((tip, i) => (
+                          <li key={i}>
+                            <CheckCircle2 size={14} className="play-icon" /> {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="ai-box avoid-box">
+                      <h3>Wady</h3>
+                      <ul>
+                        {aiReviewSummary.cons.map((tip, i) => (
+                          <li key={i}>
+                            <AlertTriangle size={14} className="avoid-icon" /> {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
                   <div
                     style={{
-                      marginTop: '1rem',
+                      marginTop: '1.5rem',
                       fontSize: '0.8rem',
-                      color: 'rgba(255,255,255,0.4)',
+                      color: 'rgba(255,255,255,0.3)',
                       textAlign: 'right'
                     }}
                   >
                     Podsumowanie wygenerowane maszynowo przez model AI na podstawie publicznych
-                    recenzji.
+                    recenzji społeczności.
                   </div>
                 </div>
               ) : anime.reviews?.edges && anime.reviews.edges.length > 0 ? (
