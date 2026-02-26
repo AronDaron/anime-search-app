@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getSteamGameDetails, SteamAppDetails } from '../../api/steamStore'
+import {
+  getSteamGameDetails,
+  SteamAppDetails,
+  getSteamGameExtendedStats,
+  SteamSpyGameExtended
+} from '../../api/steamStore'
 import {
   ArrowLeft,
   Monitor,
@@ -8,8 +13,19 @@ import {
   ShoppingCart,
   Sparkles,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Users,
+  Clock,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react'
+import {
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie
+} from 'recharts'
 import { getSteamGameReviews } from '../../api/steamReviews'
 import { fetchAIReviewSummary, AIReviewSummary } from '../../api/ai'
 import './GameDetails.css'
@@ -35,6 +51,10 @@ export const GameDetails: React.FC = () => {
   const [aiSummary, setAiSummary] = useState<AIReviewSummary | null>(null)
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
+
+  // Extended Stats State
+  const [extraStats, setExtraStats] = useState<SteamSpyGameExtended | null>(null)
+  const [isStatsLoading, setIsStatsLoading] = useState(false)
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -65,6 +85,14 @@ export const GameDetails: React.FC = () => {
         if (reviewsData) {
           setReviewsResponse(reviewsData)
         }
+
+        // Fetch Extended Stats (CCU, Playtime)
+        setIsStatsLoading(true)
+        const statsData = await getSteamGameExtendedStats(id)
+        if (statsData) {
+          setExtraStats(statsData)
+        }
+        setIsStatsLoading(false)
       } catch (err) {
         console.error('GameDetails Fetch Error:', err)
         setError('Wystąpił błąd komunikacji z serwerem Steama.')
@@ -162,300 +190,389 @@ export const GameDetails: React.FC = () => {
           <h1 className="game-main-title">{game.name}</h1>
         </div>
 
-        {/* Sekcja Mediów i Głównego 'Buy Boxa' */}
-        <div className="game-overview-grid">
-          <div className="game-media-carousel">
-            <div className="game-main-media-container">
-              {activeMedia?.type === 'video' ? (
-                <video
-                  key={activeMedia.src}
-                  src={activeMedia.src}
-                  autoPlay
-                  muted
-                  loop
-                  controls
-                  className="game-main-trailer"
-                  poster={activeMedia.poster}
-                />
-              ) : activeMedia?.type === 'image' ? (
-                <img
-                  key={activeMedia.src}
-                  src={activeMedia.src}
-                  alt="Gameplay"
-                  className="game-main-trailer"
-                />
+        <div className="game-sidebar-layout">
+          {/* Lewy panel statystyk */}
+          <div className="game-stats-sidebar glass-panel">
+            <div className="sidebar-stat-block">
+              <div className="stat-header">
+                <Users size={20} className="neon-text-green" />
+                <span>Online Teraz</span>
+              </div>
+              {isStatsLoading ? (
+                <div className="small-spinner"></div>
               ) : (
-                <img
-                  src={game.header_image}
-                  alt={game.name}
-                  className="game-main-trailer fallbackImage"
-                />
+                <div className="stat-value neon-text-green">
+                  {extraStats?.ccu?.toLocaleString() || '0'}
+                </div>
               )}
             </div>
 
-            <div className="game-screenshots-strip">
-              {game.movies && game.movies.length > 0 && (
-                <div
-                  className="game-screenshot-thumb-wrapper"
-                  onClick={() =>
-                    setActiveMedia({
-                      type: 'video',
-                      src: game.movies![0].webm?.max || game.movies![0].mp4?.max,
-                      poster: game.movies![0].thumbnail
-                    })
-                  }
-                >
-                  <img
-                    src={game.movies[0].thumbnail}
-                    alt="trailer"
-                    className={`game-screenshot-thumb ${activeMedia?.src === (game.movies![0].webm?.max || game.movies![0].mp4?.max) ? 'active' : ''}`}
-                  />
-                  <div className="game-video-play-icon">▶</div>
+            <div className="sidebar-stat-block">
+              <div className="stat-header">
+                <Clock size={20} className="neon-text-blue" />
+                <span>Czas Gry</span>
+              </div>
+              <div className="playtime-info">
+                <div className="playtime-row">
+                  <span className="label">Średnio:</span>
+                  <span className="value">
+                    {extraStats ? Math.round(extraStats.average_forever / 60) : 0}h
+                  </span>
                 </div>
-              )}
-              {game.screenshots?.slice(0, 4).map((shot) => (
-                <img
-                  key={shot.id}
-                  src={shot.path_thumbnail}
-                  alt="screenshot"
-                  className={`game-screenshot-thumb ${activeMedia?.src === shot.path_full ? 'active' : ''}`}
-                  onClick={() => setActiveMedia({ type: 'image', src: shot.path_full })}
-                />
-              ))}
+                <div className="playtime-row">
+                  <span className="label">Mediana:</span>
+                  <span className="value">
+                    {extraStats ? Math.round(extraStats.median_forever / 60) : 0}h
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="sidebar-stat-block">
+              <div className="stat-header">
+                <BarChart3 size={20} className="neon-text-purple" />
+                <span>Oceny Społeczności</span>
+              </div>
+              <div className="sidebar-chart-container">
+                {extraStats && (
+                  <ResponsiveContainer width="100%" height={120}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Positive', value: extraStats.positive },
+                          { name: 'Negative', value: extraStats.negative }
+                        ]}
+                        innerRadius={30}
+                        outerRadius={50}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        <Cell fill="var(--accent-green)" />
+                        <Cell fill="var(--accent-red)" />
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(20, 20, 20, 0.9)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+                <div className="chart-legend">
+                  <span className="pos">{extraStats?.positive?.toLocaleString()} +</span>
+                  <span className="neg">{extraStats?.negative?.toLocaleString()} -</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="sidebar-stat-block">
+              <div className="stat-header">
+                <TrendingUp size={20} className="neon-text-cyan" />
+                <span>Szacunkowa Sprzedaż</span>
+              </div>
+              <div className="stat-value-small">{extraStats?.owners || 'Brak danych'}</div>
             </div>
           </div>
 
-          <div className="game-buy-box glass-panel">
-            <img src={game.header_image} alt="Header" className="game-buy-box-img" />
-
-            <p
-              className="game-short-desc"
-              dangerouslySetInnerHTML={createMarkup(game.short_description)}
-            ></p>
-
-            <div className="game-meta-info">
-              <div className="meta-row">
-                <span className="meta-label">Data wydania:</span>
-                <span className="meta-value">{game.release_date.date}</span>
-              </div>
-              <div className="meta-row">
-                <span className="meta-label">Producent:</span>
-                <span className="meta-value accent">{game.developers?.[0] || 'Brak danych'}</span>
-              </div>
-            </div>
-
-            <div className="game-tags-cloud">
-              {game.genres?.map((g) => (
-                <span key={g.id} className="game-interactive-tag">
-                  {g.description}
-                </span>
-              ))}
-              {game.categories?.slice(0, 3).map((c) => (
-                <span key={`cat-${c.id}`} className="game-interactive-tag cat-tag">
-                  {c.description}
-                </span>
-              ))}
-            </div>
-
-            {reviewsResponse &&
-              reviewsResponse.query_summary &&
-              reviewsResponse.query_summary.total_reviews > 0 && (
-                <div className="game-reviews-summary-block">
-                  <div className="game-reviews-text">
-                    <span className="reviews-desc">
-                      {reviewsResponse.query_summary.review_score_desc}
-                    </span>
-                    <span className="reviews-count">
-                      ({reviewsResponse.query_summary.total_reviews.toLocaleString()} recenzji)
-                    </span>
-                  </div>
-                  <div
-                    className="game-reviews-pie-chart"
-                    style={{
-                      background: `conic-gradient(var(--accent-green) ${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}%, var(--accent-red) 0)`
-                    }}
-                    title={`${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}% Pozytywnych`}
-                  ></div>
-                </div>
-              )}
-
-            <div className="game-purchase-action">
-              <div className="purchase-price-area">
-                {game.is_free ? (
-                  <span className="price-tag-free">Free to Play</span>
-                ) : game.price_overview ? (
-                  game.price_overview.discount_percent > 0 ? (
-                    <div className="discount-block">
-                      <div className="discount-pct">-{game.price_overview.discount_percent}%</div>
-                      <div className="prices-col">
-                        <del>{(game.price_overview.initial / 100).toFixed(2)} zł</del>
-                        <span>{game.price_overview.final_formatted}</span>
-                      </div>
-                    </div>
+          <div className="game-main-content">
+            {/* Sekcja Mediów i Głównego 'Buy Boxa' */}
+            <div className="game-overview-grid">
+              <div className="game-media-carousel">
+                <div className="game-main-media-container">
+                  {activeMedia?.type === 'video' ? (
+                    <video
+                      key={activeMedia.src}
+                      src={activeMedia.src}
+                      autoPlay
+                      muted
+                      loop
+                      controls
+                      className="game-main-trailer"
+                      poster={activeMedia.poster}
+                    />
+                  ) : activeMedia?.type === 'image' ? (
+                    <img
+                      key={activeMedia.src}
+                      src={activeMedia.src}
+                      alt="Gameplay"
+                      className="game-main-trailer"
+                    />
                   ) : (
-                    <span className="price-tag-regular">{game.price_overview.final_formatted}</span>
-                  )
-                ) : (
-                  <span className="price-tag-regular">Niedostępne</span>
-                )}
-              </div>
-              <button
-                className="game-btn-buy"
-                onClick={() => window.open(`https://store.steampowered.com/app/${id}`, '_blank')}
-              >
-                <ShoppingCart size={20} /> Zagraj (Steam)
-              </button>
-            </div>
-          </div>
-        </div>
+                    <img
+                      src={game.header_image}
+                      alt={game.name}
+                      className="game-main-trailer fallbackImage"
+                    />
+                  )}
+                </div>
 
-        {/* Tabs Nawigacyjne - Cechy gry */}
-        <div className="game-tabs glass-panel">
-          <button
-            className={`game-tab ${activeTab === 'info' ? 'active' : ''}`}
-            onClick={() => setActiveTab('info')}
-          >
-            <Info size={18} /> O grze
-          </button>
-          {game.platforms.windows && (
-            <button
-              className={`game-tab ${activeTab === 'requirements' ? 'active' : ''}`}
-              onClick={() => setActiveTab('requirements')}
-            >
-              <Monitor size={18} /> Wymagania Systemowe
-            </button>
-          )}
-          <button
-            className={`game-tab ai-tab ${activeTab === 'ai-review' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ai-review')}
-          >
-            <Sparkles size={18} /> Werdykt AI (Wkrótce)
-          </button>
-        </div>
-
-        {/* Zawartość Aktywnych Zakładek */}
-        <div className="game-tab-content glass-panel fade-in">
-          {activeTab === 'info' && (
-            <div className="tab-info-section">
-              <h2 className="tab-title">Informacje Ogólne</h2>
-              {/* Często zablokowany tag z uwagi na duże blocki HTML. Do uproszczenia */}
-              <p
-                className="steam-html-content"
-                dangerouslySetInnerHTML={createMarkup(game.short_description)}
-              ></p>
-
-              <h3 className="sub-title">Wspierane Języki</h3>
-              <p
-                className="steam-html-content"
-                dangerouslySetInnerHTML={createMarkup(game.supported_languages)}
-              ></p>
-            </div>
-          )}
-
-          {activeTab === 'requirements' && game.pc_requirements && (
-            <div className="tab-req-section">
-              <h2 className="tab-title">Wymagania Sprzętowe (Windows PC)</h2>
-              <div className="req-grid">
-                {game.pc_requirements.minimum && (
-                  <div className="req-block">
-                    <h3 className="req-block-title">Minimalne</h3>
+                <div className="game-screenshots-strip">
+                  {game.movies && game.movies.length > 0 && (
                     <div
-                      className="steam-html-content text-small"
-                      dangerouslySetInnerHTML={createMarkup(game.pc_requirements.minimum)}
-                    ></div>
-                  </div>
-                )}
-                {game.pc_requirements.recommended && (
-                  <div className="req-block">
-                    <h3 className="req-block-title">Zalecane</h3>
-                    <div
-                      className="steam-html-content text-small"
-                      dangerouslySetInnerHTML={createMarkup(game.pc_requirements.recommended)}
-                    ></div>
-                  </div>
-                )}
+                      className="game-screenshot-thumb-wrapper"
+                      onClick={() =>
+                        setActiveMedia({
+                          type: 'video',
+                          src: game.movies![0].webm?.max || game.movies![0].mp4?.max,
+                          poster: game.movies![0].thumbnail
+                        })
+                      }
+                    >
+                      <img
+                        src={game.movies[0].thumbnail}
+                        alt="trailer"
+                        className={`game-screenshot-thumb ${activeMedia?.src === (game.movies![0].webm?.max || game.movies![0].mp4?.max) ? 'active' : ''}`}
+                      />
+                      <div className="game-video-play-icon">▶</div>
+                    </div>
+                  )}
+                  {game.screenshots?.slice(0, 4).map((shot) => (
+                    <img
+                      key={shot.id}
+                      src={shot.path_thumbnail}
+                      alt="screenshot"
+                      className={`game-screenshot-thumb ${activeMedia?.src === shot.path_full ? 'active' : ''}`}
+                      onClick={() => setActiveMedia({ type: 'image', src: shot.path_full })}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
 
-          {activeTab === 'ai-review' && (
-            <div className="tab-ai-section">
-              <h2 className="tab-title neon-text-purple">The AI Review Board</h2>
+              <div className="game-buy-box glass-panel">
+                <img src={game.header_image} alt="Header" className="game-buy-box-img" />
 
-              {!aiSummary && !isAiLoading && !aiError && (
-                <div className="ai-placeholder-msg">
-                  <Sparkles size={40} className="neon-text-purple mb-10" />
-                  <p>
-                    Moduł sztucznej inteligencji służący do wnikliwej analizy najczęstszych
-                    problemów i pochwał ze Steam Community zostanie tu zaimplementowany w Kroku 5.
-                  </p>
+                <p
+                  className="game-short-desc"
+                  dangerouslySetInnerHTML={createMarkup(game.short_description)}
+                ></p>
+
+                <div className="game-meta-info">
+                  <div className="meta-row">
+                    <span className="meta-label">Data wydania:</span>
+                    <span className="meta-value">{game.release_date.date}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Producent:</span>
+                    <span className="meta-value accent">{game.developers?.[0] || 'Brak danych'}</span>
+                  </div>
+                </div>
+
+                <div className="game-tags-cloud">
+                  {game.genres?.map((g) => (
+                    <span key={g.id} className="game-interactive-tag">
+                      {g.description}
+                    </span>
+                  ))}
+                  {game.categories?.slice(0, 3).map((c) => (
+                    <span key={`cat-${c.id}`} className="game-interactive-tag cat-tag">
+                      {c.description}
+                    </span>
+                  ))}
+                </div>
+
+                {reviewsResponse &&
+                  reviewsResponse.query_summary &&
+                  reviewsResponse.query_summary.total_reviews > 0 && (
+                    <div className="game-reviews-summary-block">
+                      <div className="game-reviews-text">
+                        <span className="reviews-desc">
+                          {reviewsResponse.query_summary.review_score_desc}
+                        </span>
+                        <span className="reviews-count">
+                          ({reviewsResponse.query_summary.total_reviews.toLocaleString()} recenzji)
+                        </span>
+                      </div>
+                      <div
+                        className="game-reviews-pie-chart"
+                        style={{
+                          background: `conic-gradient(var(--accent-green) ${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}%, var(--accent-red) 0)`
+                        }}
+                        title={`${Math.round((reviewsResponse.query_summary.total_positive / reviewsResponse.query_summary.total_reviews) * 100)}% Pozytywnych`}
+                      ></div>
+                    </div>
+                  )}
+
+                <div className="game-purchase-action">
+                  <div className="purchase-price-area">
+                    {game.is_free ? (
+                      <span className="price-tag-free">Free to Play</span>
+                    ) : game.price_overview ? (
+                      game.price_overview.discount_percent > 0 ? (
+                        <div className="discount-block">
+                          <div className="discount-pct">-{game.price_overview.discount_percent}%</div>
+                          <div className="prices-col">
+                            <del>{(game.price_overview.initial / 100).toFixed(2)} zł</del>
+                            <span>{game.price_overview.final_formatted}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="price-tag-regular">{game.price_overview.final_formatted}</span>
+                      )
+                    ) : (
+                      <span className="price-tag-regular">Niedostępne</span>
+                    )}
+                  </div>
                   <button
                     className="game-btn-buy"
-                    onClick={handleLoadAIReview}
-                    style={{ marginTop: '1.5rem', width: 'auto', padding: '10px 30px' }}
+                    onClick={() => window.open(`https://store.steampowered.com/app/${id}`, '_blank')}
                   >
-                    <Sparkles size={18} /> Wygeneruj Raport AI
+                    <ShoppingCart size={20} /> Zagraj (Steam)
                   </button>
                 </div>
-              )}
+              </div>
+            </div>
 
-              {isAiLoading && (
-                <div className="ai-placeholder-msg">
-                  <div className="neon-spinner purple mb-10"></div>
-                  <p className="neon-text-purple">Skanowanie tysięcy ludzkich opinii ze Steam...</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Synteza werdyktu może potrwać kilka sekund.
-                  </p>
+            {/* Tabs Nawigacyjne - Cechy gry */}
+            <div className="game-tabs glass-panel">
+              <button
+                className={`game-tab ${activeTab === 'info' ? 'active' : ''}`}
+                onClick={() => setActiveTab('info')}
+              >
+                <Info size={18} /> O grze
+              </button>
+              {game.platforms.windows && (
+                <button
+                  className={`game-tab ${activeTab === 'requirements' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('requirements')}
+                >
+                  <Monitor size={18} /> Wymagania Systemowe
+                </button>
+              )}
+              <button
+                className={`game-tab ai-tab ${activeTab === 'ai-review' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ai-review')}
+              >
+                <Sparkles size={18} /> Werdykt AI (Wkrótce)
+              </button>
+            </div>
+
+            {/* Zawartość Aktywnych Zakładek */}
+            <div className="game-tab-content glass-panel fade-in">
+              {activeTab === 'info' && (
+                <div className="tab-info-section">
+                  <h2 className="tab-title">Informacje Ogólne</h2>
+                  {/* Często zablokowany tag z uwagi na duże blocki HTML. Do uproszczenia */}
+                  <p
+                    className="steam-html-content"
+                    dangerouslySetInnerHTML={createMarkup(game.short_description)}
+                  ></p>
+
+                  <h3 className="sub-title">Wspierane Języki</h3>
+                  <p
+                    className="steam-html-content"
+                    dangerouslySetInnerHTML={createMarkup(game.supported_languages)}
+                  ></p>
                 </div>
               )}
 
-              {aiError && (
-                <div className="ai-placeholder-msg" style={{ color: 'var(--accent-red)' }}>
-                  <AlertTriangle size={40} className="mb-10" />
-                  <p>{aiError}</p>
-                  <button
-                    className="back-btn"
-                    onClick={handleLoadAIReview}
-                    style={{ marginTop: '1rem' }}
-                  >
-                    Spróbuj ponownie
-                  </button>
-                </div>
-              )}
-
-              {aiSummary && (
-                <div className="ai-report-container fade-in">
-                  <p className="ai-verdict">
-                    <strong>Werdykt AI:</strong> {aiSummary.verdict}
-                  </p>
-
-                  <div className="ai-pros-cons-grid">
-                    <div className="ai-box play-box">
-                      <h3>Zagraj, jeśli...</h3>
-                      <ul>
-                        {aiSummary.playIf.map((tip, i) => (
-                          <li key={i}>
-                            <CheckCircle2 size={16} className="play-icon" /> {tip}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="ai-box avoid-box">
-                      <h3>Unikaj, jeśli...</h3>
-                      <ul>
-                        {aiSummary.avoidIf.map((tip, i) => (
-                          <li key={i}>
-                            <AlertTriangle size={16} className="avoid-icon" /> {tip}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              {activeTab === 'requirements' && game.pc_requirements && (
+                <div className="tab-req-section">
+                  <h2 className="tab-title">Wymagania Sprzętowe (Windows PC)</h2>
+                  <div className="req-grid">
+                    {game.pc_requirements.minimum && (
+                      <div className="req-block">
+                        <h3 className="req-block-title">Minimalne</h3>
+                        <div
+                          className="steam-html-content text-small"
+                          dangerouslySetInnerHTML={createMarkup(game.pc_requirements.minimum)}
+                        ></div>
+                      </div>
+                    )}
+                    {game.pc_requirements.recommended && (
+                      <div className="req-block">
+                        <h3 className="req-block-title">Zalecane</h3>
+                        <div
+                          className="steam-html-content text-small"
+                          dangerouslySetInnerHTML={createMarkup(game.pc_requirements.recommended)}
+                        ></div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
+
+              {activeTab === 'ai-review' && (
+                <div className="tab-ai-section">
+                  <h2 className="tab-title neon-text-purple">The AI Review Board</h2>
+
+                  {!aiSummary && !isAiLoading && !aiError && (
+                    <div className="ai-placeholder-msg">
+                      <Sparkles size={40} className="neon-text-purple mb-10" />
+                      <p>
+                        Moduł sztucznej inteligencji służący do wnikliwej analizy najczęstszych
+                        problemów i pochwał ze Steam Community zostanie tu zaimplementowany w Kroku 5.
+                      </p>
+                      <button
+                        className="game-btn-buy"
+                        onClick={handleLoadAIReview}
+                        style={{ marginTop: '1.5rem', width: 'auto', padding: '10px 30px' }}
+                      >
+                        <Sparkles size={18} /> Wygeneruj Raport AI
+                      </button>
+                    </div>
+                  )}
+
+                  {isAiLoading && (
+                    <div className="ai-placeholder-msg">
+                      <div className="neon-spinner purple mb-10"></div>
+                      <p className="neon-text-purple">Skanowanie tysięcy ludzkich opinii ze Steam...</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Synteza werdyktu może potrwać kilka sekund.
+                      </p>
+                    </div>
+                  )}
+
+                  {aiError && (
+                    <div className="ai-placeholder-msg" style={{ color: 'var(--accent-red)' }}>
+                      <AlertTriangle size={40} className="mb-10" />
+                      <p>{aiError}</p>
+                      <button
+                        className="back-btn"
+                        onClick={handleLoadAIReview}
+                        style={{ marginTop: '1rem' }}
+                      >
+                        Spróbuj ponownie
+                      </button>
+                    </div>
+                  )}
+
+                  {aiSummary && (
+                    <div className="ai-report-container fade-in">
+                      <p className="ai-verdict">
+                        <strong>Werdykt AI:</strong> {aiSummary.verdict}
+                      </p>
+
+                      <div className="ai-pros-cons-grid">
+                        <div className="ai-box play-box">
+                          <h3>Zagraj, jeśli...</h3>
+                          <ul>
+                            {aiSummary.playIf.map((tip, i) => (
+                              <li key={i}>
+                                <CheckCircle2 size={16} className="play-icon" /> {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="ai-box avoid-box">
+                          <h3>Unikaj, jeśli...</h3>
+                          <ul>
+                            {aiSummary.avoidIf.map((tip, i) => (
+                              <li key={i}>
+                                <AlertTriangle size={16} className="avoid-icon" /> {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

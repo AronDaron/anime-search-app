@@ -45,6 +45,26 @@ export interface SteamAppDetails {
   }
 }
 
+export interface SteamSpyGameExtended {
+  appid: number
+  name: string
+  developer: string
+  publisher: string
+  score_rank: string
+  positive: number
+  negative: number
+  userscore: number
+  owners: string
+  average_forever: number
+  average_2weeks: number
+  median_forever: number
+  median_2weeks: number
+  price: string
+  initialprice: string
+  discount: string
+  ccu: number
+}
+
 /**
  * Zwraca bardzo szczegółowe dane na temat gry używając darmowego endpointu /api/appdetails.
  * Endpoint ten nie wymaga klucza API, ale jest mocno blokowany przez schematy CORS (dlatego korzystamy z hybrydy).
@@ -334,5 +354,25 @@ export const searchSteamGames = async (query: string): Promise<SteamFeaturedCate
   } catch (e) {
     console.error(`Błąd podczas wyszukiwania gier dla zapytania "${query}":`, e)
     return []
+  }
+}
+
+/**
+ * Pobiera rozszerzone statystyki ze SteamSpy (CCU, Playtime, Owners itp.)
+ */
+export const getSteamGameExtendedStats = async (
+  appId: string | number
+): Promise<SteamSpyGameExtended | null> => {
+  try {
+    const url = `https://steamspy.com/api.php`
+    const response = await fetchSteamData(url, { request: 'appdetails', appid: appId.toString() })
+
+    if (response && response.appid) {
+      return response as SteamSpyGameExtended
+    }
+    return null
+  } catch (e) {
+    console.error(`Błąd podczas pobierania rozszerzonych statystyk (appid: ${appId}):`, e)
+    return null
   }
 }

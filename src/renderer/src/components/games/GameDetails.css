@@ -1,3 +1,156 @@
+/* Layout dla Sidebar + Main Content */
+.game-sidebar-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+.game-stats-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  position: sticky;
+  top: 20px;
+  z-index: 10;
+}
+
+.game-main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Bloki Statystyk */
+.sidebar-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-stat-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.stat-value-small {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Playtime Info */
+.playtime-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.playtime-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.playtime-row .label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.playtime-row .value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Chart Container */
+.sidebar-chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: -10px;
+}
+
+.chart-legend .pos {
+  color: var(--accent-green);
+}
+
+.chart-legend .neg {
+  color: var(--accent-red);
+}
+
+/* Odświeżenie Media i BuyBoxa dla nowego układu */
+.game-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+
+@media (max-width: 1200px) {
+  .game-sidebar-layout {
+    flex-direction: column;
+  }
+
+  .game-stats-sidebar {
+    width: 100%;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .sidebar-stat-block {
+    flex: 1;
+    min-width: 150px;
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0 15px;
+  }
+
+  .sidebar-stat-block:last-child {
+    border-right: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .game-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .game-details-container {
   position: relative;
   min-height: calc(100vh - var(--header-height));
@@ -21,11 +174,10 @@
 .game-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(27, 40, 56, 0.4) 0%,
-    /* Steam deep blue tint */ var(--bg-deep) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(27, 40, 56, 0.4) 0%,
+      /* Steam deep blue tint */
+      var(--bg-deep) 100%);
 }
 
 .game-content-wrapper {
