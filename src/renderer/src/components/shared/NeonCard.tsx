@@ -6,6 +6,8 @@ export interface AnimeCardData {
   id: number
   title: string
   coverImage: string
+  fallbackImage?: string
+  secondFallback?: string
   averageScore?: number
   seasonYear?: number
   episodes?: number
@@ -17,16 +19,42 @@ interface NeonCardProps {
 }
 
 export const NeonCard: React.FC<NeonCardProps> = ({ anime, onClick }) => {
+  const [imgError, setImgError] = React.useState(false)
+  const [currentImg, setCurrentImg] = React.useState(anime.coverImage)
+
+  React.useEffect(() => {
+    setCurrentImg(anime.coverImage)
+    setImgError(false)
+  }, [anime.coverImage])
+
+  const handleImgError = () => {
+    if (currentImg === anime.coverImage && anime.fallbackImage) {
+      setCurrentImg(anime.fallbackImage)
+    } else if (currentImg === anime.fallbackImage && anime.secondFallback) {
+      setCurrentImg(anime.secondFallback)
+    } else {
+      setImgError(true)
+    }
+  }
+
   return (
     <div className="neon-card" onClick={() => onClick?.(anime.id)}>
       <div className="img-wrapper">
         <img
-          src={anime.coverImage}
+          src={currentImg}
           alt={anime.title}
-          className="card-img"
+          className={`card-img ${imgError ? 'hidden' : ''}`}
           loading="lazy"
           referrerPolicy="no-referrer"
+          onError={handleImgError}
         />
+        {imgError && (
+          <div className="img-placeholder">
+            <div className="placeholder-content">
+              <span>{anime.title}</span>
+            </div>
+          </div>
+        )}
         {anime.averageScore && (
           <div className="score-badge glass-panel">
             <Star className="star-icon" size={14} fill="currentColor" />

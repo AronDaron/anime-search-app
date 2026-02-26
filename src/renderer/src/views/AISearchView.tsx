@@ -2,9 +2,9 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, Sparkles, SlidersHorizontal, Search, AlertCircle } from 'lucide-react'
-import { fetchAIAnimeTitles, AISearchResult } from '../api/ai'
 import { getAnimeByExactTitle, searchAnime, AnimeMedia } from '../api/anilist'
-import { searchSteamGames } from '../api/steamStore'
+import { searchSteamGames, searchSteamGamesByGenre, getSteamGameExtendedStats } from '../api/steamStore'
+import { fetchAIAnimeTitles, AISearchResult, fetchAIRerankedGames, CandidateGame } from '../api/ai'
 import { NeonCard } from '../components/shared/NeonCard'
 import './AISearchView.css'
 import '../components/shared/Grid.css'
@@ -21,6 +21,7 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [aiParams, setAiParams] = useState<AISearchResult['searchParams'] | null>(null)
+  const [searchStep, setSearchStep] = useState<string>('')
 
   const [apiKey] = useState(
     import.meta.env.VITE_OPENROUTER_KEY || localStorage.getItem('openRouterApiKey') || ''
@@ -55,80 +56,137 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
       }
 
       console.log(`Wysyłanie zapytania do AI (${domain}):`, fullPrompt)
+      setSearchStep('Analizowanie Twojego zapytania...')
       const aiResult = await fetchAIAnimeTitles(fullPrompt, apiKey, domain)
 
       setAiParams(aiResult.searchParams || null)
 
       let combinedResults: AnimeMedia[] = []
 
-      // 1. Fetch exact titles guessed by AI
-      if (aiResult.titles && aiResult.titles.length > 0) {
-        console.log('AI wytypowało tytuły:', aiResult.titles)
-
-        if (domain === 'anime') {
+      if (domain === 'anime') {
+        // --- ANIME FLOW (Original) ---
+        if (aiResult.titles && aiResult.titles.length > 0) {
           const titlePromises = aiResult.titles.map((title) => getAnimeByExactTitle(title))
           const titleResponses = await Promise.all(titlePromises)
-
-          const validAnimes = titleResponses.filter((item): item is AnimeMedia => item !== null)
-          combinedResults = [...validAnimes]
-        } else {
-          // Pobieramy dane ze Steam dla każdego tytułu AI
-          const gamePromises = aiResult.titles.map((title) => searchSteamGames(title))
-          const gameResponses = await Promise.all(gamePromises)
-
-          const validGames = gameResponses
-            .map((res) => (res && res.length > 0 ? res[0] : null))
-            .filter((item): item is any => item !== null)
-
-          combinedResults = validGames.map(
-            (g) =>
-              ({
-                id: g.id,
-                title: { romaji: g.name, english: g.name, native: g.name },
-                coverImage: { extraLarge: g.large_capsule_image, large: g.large_capsule_image, medium: g.small_capsule_image, color: '' },
-                averageScore: 0,
-                seasonYear: 0,
-                episodes: 0
-              }) as unknown as AnimeMedia
-          )
+          combinedResults = titleResponses.filter((item): item is AnimeMedia => item !== null)
         }
-      }
 
-      // 2. Supplement with advanced search based on extracted parameters
-      if (aiResult.searchParams && domain === 'anime') {
-        console.log('Wyszukiwanie uzupełniające po tagach:', aiResult.searchParams)
+        if (aiResult.searchParams) {
+          const yearToUse = manualYear ? parseInt(manualYear, 10) : aiResult.searchParams.seasonYear
+          const seasonToUse = manualSeason ? (manualSeason as any) : undefined
 
-        const yearToUse = manualYear ? parseInt(manualYear, 10) : aiResult.searchParams.seasonYear
-        const seasonToUse = manualSeason ? (manualSeason as any) : undefined
-
-        if (
-          (aiResult.searchParams.genres && aiResult.searchParams.genres.length > 0) ||
-          (aiResult.searchParams.tags && aiResult.searchParams.tags.length > 0) ||
-          yearToUse ||
-          seasonToUse
-        ) {
-          try {
-            const advancedSearchResults = await searchAnime(
-              null, // no specific text search
-              1,
-              10, // Max 10 tag results
-              seasonToUse,
-              yearToUse,
-              aiResult.searchParams.genres,
-              aiResult.searchParams.tags
-            )
-
-            if (advancedSearchResults.Page.media.length > 0) {
-              // Avoid duplicates by ID
-              const existingIds = new Set(combinedResults.map((a) => a.id))
-              const newUnique = advancedSearchResults.Page.media.filter(
-                (a) => !existingIds.has(a.id)
-              )
-              combinedResults = [...combinedResults, ...newUnique]
-            }
-          } catch (tagErr) {
-            console.error('Błąd wyszukiwania po tagach:', tagErr)
+          if ((aiResult.searchParams.genres?.length || aiResult.searchParams.tags?.length || yearToUse || seasonToUse)) {
+            const advanced = await searchAnime(null, 1, 10, seasonToUse, yearToUse, aiResult.searchParams.genres, aiResult.searchParams.tags)
+            const existingIds = new Set(combinedResults.map(a => a.id))
+            const newUnique = advanced.Page.media.filter(a => !existingIds.has(a.id))
+            combinedResults = [...combinedResults, ...newUnique]
           }
+        }
+      } else {
+        // --- GAMES HYBRID FLOW (New) ---
+        setSearchStep('Budowanie puli kandydatów ze Steam...')
+        const candidatePool = new Map<number, any>()
+
+        const filterGame = (g: any) => {
+          if (!g || !g.id || !g.name) return false
+          const nameLower = g.name.toLowerCase()
+          const dlcKeywords = [
+            'dlc', 'soundtrack', 'expansion', 'pass', 'pack', 'artbook', 'content',
+            'bonus', 'upgrade', 'digital', 'bundle', 'krew i wino', 'serca z kamienia',
+            'blood and wine', 'hearts of stone', 'premium', 'ost'
+          ]
+          const isDLC = dlcKeywords.some(kw => nameLower.includes(kw))
+          const isFullGameEdition = nameLower.includes('complete') ||
+            nameLower.includes('game of the year') ||
+            nameLower.includes('definitive') ||
+            nameLower.includes('edycja kompletna')
+          if (isDLC && !isFullGameEdition) return false
+          return true
+        }
+
+        // 1. Fetch by titles guessed by AI
+        if (aiResult.titles && aiResult.titles.length > 0) {
+          const titleResults = await Promise.all(aiResult.titles.map(t => searchSteamGames(t)))
+          titleResults.flat().forEach(g => {
+            if (filterGame(g)) candidatePool.set(g.id, g)
+          })
+        }
+
+        // 2. Fetch by tags extracted by AI
+        if (aiResult.searchParams?.tags || aiResult.searchParams?.genres) {
+          const allTags = [...(aiResult.searchParams.genres || []), ...(aiResult.searchParams.tags || [])].slice(0, 3)
+          const tagResults = await Promise.all(allTags.map(tag => searchSteamGamesByGenre(tag)))
+          tagResults.flat().forEach(g => {
+            if (filterGame(g)) candidatePool.set(g.id, g)
+          })
+        }
+
+        // 3. Name-based deduplication
+        const uniqueByName = new Map<string, any>()
+        candidatePool.forEach((g) => {
+          const baseName = g.name.split(/ - |: /)[0].trim().toLowerCase()
+          if (!uniqueByName.has(baseName) || g.name.length < uniqueByName.get(baseName).name.length) {
+            uniqueByName.set(baseName, g)
+          }
+        })
+
+        let candidates = Array.from(uniqueByName.values()).slice(0, 40)
+
+        // 3. AI Reranking Phase
+        if (candidates.length > 0) {
+          setSearchStep(`Weryfikowanie ${candidates.length} kandydatów przez AI...`)
+
+          // Pobieramy tagi dla kandydatów (część ich może nie mieć z prostego searcha)
+          const candidateData: CandidateGame[] = await Promise.all(candidates.map(async (c) => {
+            // Próbujemy pobrać tagi ze SteamSpy jeśli ich brakuje
+            const stats = await getSteamGameExtendedStats(c.id)
+            return {
+              id: c.id,
+              name: c.name,
+              tags: stats?.tags ? Object.keys(stats.tags).slice(0, 10) : []
+            }
+          }))
+
+          const rankedIds = await fetchAIRerankedGames(query, candidateData, apiKey)
+
+          // Sort candidates by AI rank
+          const rankedResults = rankedIds
+            .map(id => candidates.find(c => c.id.toString() === id.toString()))
+            .filter((c): c is any => !!c)
+
+          // Fallback if AI fails to return enough
+          const finalSet = [...rankedResults]
+          if (finalSet.length < 5) {
+            candidates.slice(0, 5).forEach(c => {
+              if (!finalSet.find(f => f.id === c.id)) finalSet.push(c)
+            })
+          }
+
+          combinedResults = finalSet.slice(0, 12).map(g => {
+            const appId = g.id.toString()
+            // Use vertical library capsule for Steam games (2:3 aspect ratio) which matches NeonCard
+            const verticalCover = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/library_600x900_2x.jpg`
+            // Fallback 1: horizontal header
+            const horizontalFallback = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`
+            // Fallback 2: capsule_616x353
+            const secondFallback = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/capsule_616x353.jpg`
+
+            return {
+              id: g.id,
+              title: { romaji: g.name, english: g.name, native: g.name },
+              coverImage: {
+                extraLarge: verticalCover,
+                large: verticalCover,
+                medium: verticalCover,
+                color: ''
+              },
+              fallbackImage: horizontalFallback,
+              secondFallback: secondFallback, // We'll add this to NeonCard too
+              averageScore: 0,
+              seasonYear: 0,
+              episodes: 0
+            } as any
+          })
         }
       }
 
@@ -217,7 +275,10 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
                       className={`neon-spinner ${domain === 'games' ? 'green' : 'purple'}`}
                       style={{ width: '20px', height: '20px', borderWidth: '2px' }}
                     ></div>
-                    <span>Analizowanie...</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 'bold' }}>Szukanie...</span>
+                      <span style={{ fontSize: '10px', opacity: 0.8, whiteSpace: 'nowrap' }}>{searchStep}</span>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -306,18 +367,19 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
           </div>
 
           <div className="anime-grid">
-            {results.map((anime, index) => (
+            {results.map((item: any, index) => (
               <NeonCard
-                key={`${anime.id}-${index}`}
+                key={`${item.id}-${index}`}
                 anime={{
-                  id: anime.id,
-                  title: anime.title.english || anime.title.romaji,
-                  coverImage: anime.coverImage.extraLarge,
-                  averageScore: anime.averageScore || undefined,
-                  seasonYear: anime.seasonYear || undefined,
-                  episodes: anime.episodes || undefined
+                  id: item.id,
+                  title: item.title.english || item.title.romaji,
+                  coverImage: item.coverImage.extraLarge,
+                  fallbackImage: item.fallbackImage, // Pass the fallback image
+                  averageScore: item.averageScore || undefined,
+                  seasonYear: item.seasonYear || undefined,
+                  episodes: item.episodes || undefined
                 }}
-                onClick={() => navigate(`/${domain === 'games' ? 'games' : 'anime'}/${anime.id}`)}
+                onClick={() => navigate(`/${domain === 'games' ? 'games' : 'anime'}/${item.id}`)}
               />
             ))}
           </div>

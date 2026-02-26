@@ -22,16 +22,26 @@ export const fetchAIAnimeTitles = async (
 
   const systemPrompt =
     domain === 'games'
-      ? `You are an expert PC video games recommendation engine. The user will give you a description of a game. 
-           You must reply ONLY with a JSON object containing two keys:
-           1. 'titles': an array of strings. These strings should be the exact official titles of the PC/Steam games that match. Return up to 5 results.
-           2. 'searchParams': an object containing parameters extracted from the user's description. Use this to help find newer games. It can contain:
-              - 'genres': array of strings (e.g., ["Action", "RPG", "FPS"])
-              - 'tags': array of strings (e.g., ["Cyberpunk", "Multiplayer", "Story Rich"])
-              - 'seasonYear': number (e.g., 2024), ONLY if the user explicitly mentions a year or says "newest/this year".
-           
-           If you cannot extract a parameter, omit it from the 'searchParams' object.
-           Do not include any explanations, just the JSON.`
+      ? `You are an expert PC video games recommendation engine. The user will give you a description of a game.            You must reply ONLY with a JSON object containing two keys:
+            1. 'titles': an array of strings. These strings should be the exact official titles of the PC/Steam games that match. Return up to 5 results.
+            2. 'searchParams': an object containing parameters extracted from the user's description. Use this to help find newer games. It can contain:
+               - 'genres': array of strings (e.g., ["Action", "RPG", "FPS"])
+               - 'tags': array of strings (e.g., ["Cyberpunk", "Multiplayer", "Story Rich", "Soulslike"])
+               - 'seasonYear': number (e.g., 2024), ONLY if the user explicitly mentions a year or says "newest/this year".
+            
+            AVAILABLE STEAM TAGS (Use these for 'tags' and 'genres' if they match):
+            Action, Adventure, RPG, Strategy, Indie, Simulation, Racing, Sports, Casual, Massively Multiplayer, 2D, 3D, 
+            Atmospheric, Story Rich, Exploration, Fantasy, Multiplayer, Pixel Graphics, Puzzle, First-Person, Horror, 
+            Open World, Survival, Co-op, Platformer, Roguelike, Sandbox, Management, Crafting, Sci-fi, Cyberpunk, 
+            Soulslike, Metroidvania, Roguelite, Visual Novel, Hack and Slash, Zombies, Fighting, Stealth, Tactical, 
+            Card Game, VR, Tower Defense, City Builder, Mystery, Point & Click, Rhythm, Turn-Based, Gore, Violent, 
+            Great Soundtrack, Difficult, Funny, Anime, Space, War, Historical, Realistic, Third Person, Top-Down, 
+            Side Scroller, Arcade, Bullet Hell, Shoot 'Em Up, Souls-like, Relaxing, Dark, Cute, Medieval, Magic, 
+            Post-apocalyptic, Building, Space, Western, Noir, Parkour, Crime, Investigation, Comedy, Parody, 
+            Political, Educational, Family Friendly.
+
+            If you cannot extract a parameter, omit it from the 'searchParams' object.
+            Do not include any explanations, just the JSON.`
       : `You are an expert anime recommendation engine. The user will give you a description of an anime plot or elements. 
            You must reply ONLY with a JSON object containing two keys:
            1. 'titles': an array of strings. These strings should be the exact official English or Romaji titles of the anime that match the description perfectly. Return up to 5 results.
@@ -354,5 +364,72 @@ export const analyzePlayerProfile = async (
   } catch (e) {
     console.error('analyzePlayerProfile error:', e)
     throw e
+  }
+}
+
+export interface CandidateGame {
+  id: string | number
+  name: string
+  description?: string
+  tags?: string[]
+}
+
+/**
+ * AI Reranker: Takes a list of candidate games and ranks them by relevance to the user's original query.
+ */
+export const fetchAIRerankedGames = async (
+  userQuery: string,
+  candidates: CandidateGame[],
+  apiKey: string
+): Promise<(string | number)[]> => {
+  if (!apiKey || candidates.length === 0) return candidates.map((c) => c.id)
+
+  const candidatesText = candidates
+    .map((c) => `ID: ${c.id} | Title: ${c.name} | Tags: ${c.tags?.join(', ')}`)
+    .join('\n')
+
+  const payload = {
+    model: 'google/gemini-2.0-flash-exp', // Fast and cheap for reranking
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `You are a game recommendation reranker. The user provided a description: "${userQuery}".
+                 I will provide you with a list of up to 40 candidate games found by a search engine.
+                 Your task is to select the BEST 10-12 games that match the user's description and rank them by relevance.
+                 
+                 CRITICAL: Prioritize FULL GAMES over DLCs, Soundtracks, or Map Packs. 
+                 If a title contains "DLC", "Soundtrack", "Expansion Pass", or "Season Pass", it should be ranked very low or excluded UNLESS the user specifically asked for an expansion.
+                 
+                 Pay attention to atmospheric descriptions, specific themes, and mechanics mentioned by the user.
+                 
+                 Return ONLY a JSON object:
+                 { "rankedIds": [id1, id2, id3, ...] }
+                 Where IDs are from the original candidate list in order of relevance.`
+      },
+      {
+        role: 'user',
+        content: `Candidates:\n${candidatesText}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await response.json()
+    const content = data.choices[0].message.content
+    const parsed = JSON.parse(content)
+    return parsed.rankedIds || []
+  } catch (e) {
+    console.error('AI Reranking failed:', e)
+    return candidates.slice(0, 12).map((c) => c.id) // Fallback to first few candidates
   }
 }
