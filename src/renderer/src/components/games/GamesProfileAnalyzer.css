@@ -1,0 +1,354 @@
+.profile-analyzer-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.analyzer-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.analyzer-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0.5rem auto 0;
+}
+
+.analyzer-form-glass {
+    max-width: 800px;
+    margin: 0 auto 3rem;
+    padding: 2rem;
+    background: rgba(10, 10, 15, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.analyzer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--neon-green);
+}
+
+.steam-id-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 128, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1rem;
+    outline: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.steam-id-input:focus {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 15px rgba(0, 255, 128, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.mode-selector {
+    display: flex;
+    gap: 1rem;
+}
+
+.mode-btn {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mode-btn.active {
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.mode-btn.active.roast {
+    background: rgba(255, 69, 0, 0.15);
+    border-color: #ff4500;
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+    color: #ffaa80;
+}
+
+.mode-btn.active.serious {
+    background: rgba(0, 191, 255, 0.15);
+    border-color: #00bfff;
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
+    color: #80dfff;
+}
+
+.analyze-submit-btn {
+    padding: 1.2rem;
+    background: linear-gradient(135deg, rgba(0, 255, 128, 0.2), rgba(0, 128, 255, 0.2));
+    border: 1px solid rgba(0, 255, 128, 0.4);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.analyze-submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(0, 255, 128, 0.4), rgba(0, 128, 255, 0.4));
+    box-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
+    transform: translateY(-2px);
+}
+
+.analyze-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.info-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.info-alert b {
+    color: var(--text-primary);
+}
+
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    border-color: rgba(255, 77, 77, 0.3);
+    background: rgba(255, 77, 77, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.error-message p {
+    color: #ffcccc;
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+/* Bento Box Layout for Results */
+.analysis-result-bento {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.analysis-card {
+    background: rgba(15, 15, 20, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Themes per mode inside result */
+.main-analysis.roast-theme {
+    border-color: rgba(255, 69, 0, 0.3);
+    box-shadow: 0 0 40px rgba(255, 69, 0, 0.1);
+}
+
+.main-analysis.roast-theme h2 {
+    color: #ff7043;
+}
+
+.main-analysis.roast-theme .verdict-badge {
+    background: rgba(255, 69, 0, 0.2);
+    color: #ff8a65;
+    border: 1px solid #ff4500;
+}
+
+.main-analysis.serious-theme {
+    border-color: rgba(0, 191, 255, 0.3);
+    box-shadow: 0 0 40px rgba(0, 191, 255, 0.1);
+}
+
+.main-analysis.serious-theme h2 {
+    color: #4dd0e1;
+}
+
+.main-analysis.serious-theme .verdict-badge {
+    background: rgba(0, 191, 255, 0.2);
+    color: #80deea;
+    border: 1px solid #00bfff;
+}
+
+.analysis-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.analysis-card-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.verdict-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.analysis-markdown-content {
+    color: #d1d5db;
+    line-height: 1.7;
+    font-size: 1.1rem;
+}
+
+.analysis-markdown-content p {
+    margin-bottom: 1.5rem;
+}
+
+.analysis-markdown-content strong {
+    color: #fff;
+}
+
+.analysis-markdown-content h1,
+.analysis-markdown-content h2,
+.analysis-markdown-content h3 {
+    color: #fff;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.analysis-card.top-games-list h3 {
+    margin: 0 0 1.5rem 0;
+    color: #fff;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.8rem;
+}
+
+.games-list-scroller {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.games-list-scroller::-webkit-scrollbar {
+    width: 6px;
+}
+
+.games-list-scroller::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.analyzed-game-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.analyzed-game-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(-4px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.rank-num {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.2rem;
+    width: 30px;
+}
+
+.game-micro-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.analyzed-game-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.game-name {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.game-time {
+    color: var(--neon-green);
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+}
+
+/* Spinner colors override for Roast mode */
+.neon-spinner.orange {
+    border-bottom-color: #ff4500;
+}
+
+.neon-spinner.cyan {
+    border-bottom-color: #00bfff;
+}
+
+@media (max-width: 900px) {
+    .analysis-result-bento {
+        grid-template-columns: 1fr;
+    }
+}

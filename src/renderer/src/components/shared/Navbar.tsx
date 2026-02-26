@@ -155,6 +155,12 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
               >
                 Nowości
               </button>
+              <button
+                className={`nav-btn ${path === '/games/profile-analyzer' ? 'active' : ''}`}
+                onClick={() => navigate('/games/profile-analyzer')}
+              >
+                Analiza Konta
+              </button>
             </>
           )}
 

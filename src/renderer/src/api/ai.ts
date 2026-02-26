@@ -281,3 +281,78 @@ export const fetchAIReviewSummary = async (
     throw e
   }
 }
+
+export interface AIProfileAnalysis {
+  title: string
+  content: string
+  verdictTag: string
+}
+
+export const analyzePlayerProfile = async (
+  topGames: { name: string; playtimeMinutes: number }[],
+  mode: 'serious' | 'roast',
+  apiKey: string
+): Promise<AIProfileAnalysis> => {
+  if (!apiKey) {
+    throw new Error('Brak klucza API OpenRouter.')
+  }
+
+  const gamesListText = topGames
+    .map((g, i) => `${i + 1}. ${g.name} - ${Math.round(g.playtimeMinutes / 60)} godzin`)
+    .join('\n')
+
+  const systemPrompt =
+    mode === 'serious'
+      ? `Jesteś profesjonalnym psychologiem i znawcą gier wideo. Odpowiedz WYŁĄCZNIE w formacie JSON.
+         Przeanalizuj profil gracza na podstawie jego Top 15 najczęściej granych gier:
+         
+         1. 'title': Wymyśl pasujący, profesjonalny tytuł profilu gracza (np. "Strateg i Planista").
+         2. 'content': W 3-4 akapitach przeanalizuj w języku polskim, co te gry mówią o jego osobowości, jakich doświadczeń szuka. Bądź obiektywny i ciekawy. Formatuj w Markdown.
+         3. 'verdictTag': Krótki tag podsumowujący (np. "Typ Zrównoważony").`
+      : `Jesteś bezlitosnym, sarkastycznym graczem, który uwielbia wyśmiewać (roast) innych za to, w co grają. Odpowiedz WYŁĄCZNIE w formacie JSON.
+         Wyśmiej gust gracza na podstawie jego Top 15 gier i przegranych w nich koszmarnych ilości godzin:
+         
+         1. 'title': Wymyśl obraźliwy, śmieszny tytuł dla tego gracza (np. "Niewolnik Gacha" lub "Toksyczny Tryhard").
+         2. 'content': W 3-4 akapitach jedź po nim bez litości w języku polskim. Używaj czarnego humoru, ironii i wytykaj mu zmarnowane życie formatując w Markdown. Daj radę, np. "idź dotknąć trawy".
+         3. 'verdictTag': Szybki tag-punchline (np. "Syndrom Sztokholmski").`
+
+  const payload = {
+    model: 'anthropic/claude-sonnet-4.6',
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: `Oto lista Top gier gracza (format: Nazwa gry - czas w godzinach):\n\n${gamesListText}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      console.error('OpenRouter Error Response:', await response.text())
+      throw new Error(`Błąd API OpenRouter: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices[0].message.content
+
+    console.log('Surowa odpowiedź AI Profile Analyzer:', content)
+    return JSON.parse(content) as AIProfileAnalysis
+  } catch (e) {
+    console.error('analyzePlayerProfile error:', e)
+    throw e
+  }
+}

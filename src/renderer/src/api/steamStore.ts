@@ -544,3 +544,40 @@ export const getSimilarGames = async (
     return []
   }
 }
+
+/**
+ * Pobiera listę gier posiadanych przez podanego gracza, wykorzystując podane Steam ID.
+ * Wymaga publicznych szczegółów profilu gracza w ustawieniach prywatności Steama.
+ */
+export interface SteamOwnedGame {
+  appid: number
+  name: string
+  playtime_forever: number
+  img_icon_url: string
+  has_community_visible_stats?: boolean
+  playtime_windows_forever?: number
+  playtime_mac_forever?: number
+  playtime_linux_forever?: number
+}
+
+export const getSteamOwnedGames = async (steamId: string): Promise<SteamOwnedGame[]> => {
+  try {
+    const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/`
+    const response = await fetchSteamData(url, { 
+      steamid: steamId, 
+      include_appinfo: 'true',
+      include_played_free_games: 'true',
+      format: 'json'
+    })
+
+    if (response && response.response && response.response.games) {
+      return response.response.games as SteamOwnedGame[]
+    }
+
+    console.warn(`Nie udało się pobrać gier dla Steam ID: ${steamId}. Upewnij się, że profil jest publiczny.`)
+    return []
+  } catch (e) {
+    console.error(`Błąd podczas pobierania posiadanych gier dla (SteamID: ${steamId}):`, e)
+    return []
+  }
+}
