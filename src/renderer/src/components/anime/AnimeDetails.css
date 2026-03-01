@@ -14,7 +14,7 @@
   width: 100% !important;
   margin-bottom: 2rem !important;
   position: relative !important;
-  z-index: 100 !important;
+  z-index: 40;
   padding: 0 5px !important;
 }
 
