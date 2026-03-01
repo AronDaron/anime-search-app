@@ -68,7 +68,6 @@ function App(): React.JSX.Element {
             }
           />
           <Route path="/games/ai-search" element={<AISearchView domain="games" />} />
-          <Route path="/games/bestsellers" element={<GamesHome title="Bestsellery Gier" />} />
           <Route path="/games/deals" element={<GamesPriceTieredView title="Promocje Steam" categoryType="deals" />} />
           <Route path="/games/genres" element={<GameGenresView />} />
           <Route path="/games/filter-search" element={<GameFilterSearchView />} />

@@ -1,81 +1,133 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameCard, GameData } from './GameCard'
-import { getSteamStoreFeaturedCategories, searchSteamGamesByGenre, getSteamSpyTop100, SteamFeaturedCategoryItem } from '../../api/steamStore'
+import { getSteamStoreFeaturedCategories, searchSteamGamesByGenre, SteamFeaturedCategoryItem, getMultipleSteamAppDetails } from '../../api/steamStore'
 import './GamesHome.css'
 
 export interface GamesHomeProps {
     title?: string
 }
 
+const ITEMS_PER_PAGE = 20;
+
 export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyróżnione' }) => {
     const navigate = useNavigate()
     const [games, setGames] = useState<GameData[]>([])
+    const [allRawItems, setAllRawItems] = useState<SteamFeaturedCategoryItem[]>([])
+    const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
     const [isLoading, setIsLoading] = useState(true)
+    const [isMoreLoading, setIsMoreLoading] = useState(false)
+    const [hasMore, setHasMore] = useState(true)
 
+    const observer = useRef<IntersectionObserver | null>(null);
+    const lastElementRef = useCallback((node: HTMLDivElement | null) => {
+        if (isLoading || isMoreLoading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore && !isMoreLoading) {
+                setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [isLoading, isMoreLoading, hasMore]);
+
+    // 1. Pobieranie wstępnej listy ID
     useEffect(() => {
         let isMounted = true;
-        const fetchGames = async () => {
+        const fetchInitialList = async () => {
             setIsLoading(true);
+            setGames([]);
+            setVisibleCount(ITEMS_PER_PAGE);
             try {
                 const categories = await getSteamStoreFeaturedCategories();
                 if (!isMounted) return;
 
                 let selectedItems: SteamFeaturedCategoryItem[] = [];
 
-                if (title === 'Bestsellery Gier') {
-                    // Start with Steam Store top sellers
-                    const steamTopSellers = categories?.top_sellers?.items || [];
-
-                    // Add SteamSpy Top 100 for more results
-                    const spyTopSellers = await getSteamSpyTop100('top100in2weeks');
-
-                    selectedItems = [...steamTopSellers, ...spyTopSellers];
-                } else if (title === 'Promocje Steam') {
+                if (title === 'Promocje Steam') {
                     selectedItems = categories?.specials?.items || [];
                 } else if (title === 'Nowości na Steam') {
                     selectedItems = categories?.new_releases?.items || [];
                 } else {
-                    // Domyślnie na stronie głównej gier miksujemy duże nagłówki z bestsellerami
+                    // Domyślnie miksujemy duże nagłówki z bestsellerami
                     const featureItems = categories?.['0']?.items || categories?.large_capsules?.items || [];
                     const topSellers = categories?.top_sellers?.items || [];
-
-                    // Dodatkowo pobieramy gry z tagiem "Anime" dla unikalnego charakteru aplikacji
                     const animeGames = await searchSteamGamesByGenre('Anime');
-
                     selectedItems = [...featureItems, ...topSellers, ...animeGames.slice(0, 20)];
                 }
 
-                // Globalne usunięcie duplikatów i uszkodzonych ofert bez ID
                 const uniqueItems = selectedItems.filter(
                     (item, index, self) => item?.id && index === self.findIndex((t) => t?.id === item?.id)
                 );
 
-                const mappedGames: GameData[] = uniqueItems.map(item => ({
-                    id: item.id.toString(),
-                    title: item.name || 'Nieznany Tytuł',
-                    capsuleImage: item.large_capsule_image || item.small_capsule_image || item.header_image || '',
-                    price: item.final_price ? item.final_price / 100 : 0,
-                    originalPrice: item.original_price ? item.original_price / 100 : undefined,
-                    discountPercent: item.discount_percent || 0,
-                    tags: [],
-                    osWindows: item.windows_available ?? true,
-                }));
+                setAllRawItems(uniqueItems);
+                setHasMore(uniqueItems.length > ITEMS_PER_PAGE);
 
-                setGames(mappedGames);
+                const firstBatch = uniqueItems.slice(0, ITEMS_PER_PAGE);
+                await fetchBatchDetails(firstBatch, true);
+
             } catch (error) {
-                console.error("Failed to load featured categories:", error);
+                console.error("Failed to load initial games list:", error);
             } finally {
                 if (isMounted) setIsLoading(false);
             }
         };
 
-        fetchGames();
-
-        return () => {
-            isMounted = false;
-        };
+        fetchInitialList();
+        return () => { isMounted = false; };
     }, [title]);
+
+    // 2. Pobieranie kolejnych paczek gdy visibleCount rośnie
+    useEffect(() => {
+        if (isLoading || visibleCount <= ITEMS_PER_PAGE || isMoreLoading) return;
+
+        const start = visibleCount - ITEMS_PER_PAGE;
+        const nextBatch = allRawItems.slice(start, visibleCount);
+
+        if (nextBatch.length > 0) {
+            fetchBatchDetails(nextBatch, false);
+        }
+
+        if (visibleCount >= allRawItems.length) {
+            setHasMore(false);
+        }
+    }, [visibleCount]);
+
+    const fetchBatchDetails = async (batch: SteamFeaturedCategoryItem[], isInitial: boolean) => {
+        if (!isInitial) setIsMoreLoading(true);
+        try {
+            const appIds = batch.map(item => item.id);
+            const freshDetails = await getMultipleSteamAppDetails(appIds);
+
+            const mappedBatch: GameData[] = freshDetails.map(d => ({
+                id: (d.steam_appid || (d as any).id || '').toString(),
+                title: d.name || 'Nieznany Tytuł',
+                capsuleImage: d.header_image || '',
+                price: d.price_overview ? d.price_overview.final / 100 : 0,
+                originalPrice: d.price_overview ? d.price_overview.initial / 100 : undefined,
+                discountPercent: d.price_overview?.discount_percent || 0,
+                tags: [],
+                osWindows: d.platforms?.windows ?? true,
+            }));
+
+            setGames(prev => isInitial ? mappedBatch : [...prev, ...mappedBatch]);
+        } catch (err) {
+            console.error("Error fetching batch details:", err);
+            const fallbackBatch = batch.map(item => ({
+                id: item.id.toString(),
+                title: item.name,
+                capsuleImage: item.large_capsule_image || item.header_image || '',
+                price: (item.final_price || 0) / 100,
+                originalPrice: item.original_price ? item.original_price / 100 : undefined,
+                discountPercent: item.discount_percent || 0,
+                tags: [],
+                osWindows: item.windows_available ?? true,
+            }));
+            setGames(prev => isInitial ? fallbackBatch : [...prev, ...fallbackBatch]);
+        } finally {
+            if (!isInitial) setIsMoreLoading(false);
+        }
+    };
 
     return (
         <div className="games-home-container fade-in">
@@ -84,19 +136,31 @@ export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyró�
             </header>
 
             <section className="games-featured-section">
-                {isLoading ? (
+                {isLoading && games.length === 0 ? (
                     <div className="loading-state">
                         <div className="neon-spinner green"></div>
-                        <p>Wczytywanie bazy danych Steam...</p>
+                        <p>Inicjalizacja bazy danych...</p>
                     </div>
                 ) : (
-                    <div className="games-grid">
-                        {games.map((game) => (
-                            <div key={game.id} className="game-card-wrapper">
-                                <GameCard game={game} onClick={() => navigate(`/games/${game.id}`)} />
-                            </div>
-                        ))}
-                    </div>
+                    <>
+                        <div className="games-grid">
+                            {games.map((game) => (
+                                <div key={game.id} className="game-card-wrapper">
+                                    <GameCard game={game} onClick={() => navigate(`/games/${game.id}`)} />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Kotwica do Infinite Scroll */}
+                        <div ref={lastElementRef} className="scroll-anchor" style={{ height: '20px', margin: '20px 0' }}>
+                            {isMoreLoading && (
+                                <div className="more-loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
+                                    <div className="small-spinner"></div>
+                                    <span>Pobieranie kolejnych bestsellerów...</span>
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
             </section>
         </div>

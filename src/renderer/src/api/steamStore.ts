@@ -2,6 +2,7 @@ import { fetchSteamData } from './steamAPI'
 
 // Typowania zwracane przez wewnętrzne endpointy appdetails Steama
 export interface SteamAppDetails {
+  steam_appid: number
   name: string
   is_free: boolean
   header_image: string
@@ -79,7 +80,8 @@ export const getSteamGameDetails = async (
   try {
     const url = `https://store.steampowered.com/api/appdetails`
     // Dodajemy parametr l=english albo l=polish, zeby dostać dane w preferowanym języku (jeśli są)
-    const response = await fetchSteamData(url, { appids: appId.toString(), l: 'polish' })
+    // cc=PL wymusza ceny w polskiej walucie i polski region cenowy
+    const response = await fetchSteamData(url, { appids: appId.toString(), l: 'polish', cc: 'PL' })
 
     // Steam Store API zwraca obiekt, którego kluczem na roocie jest ID gry: { "1091500": { success: true, data: {...} } }
     const gameDataRoot = response[appId.toString()]
@@ -95,6 +97,35 @@ export const getSteamGameDetails = async (
     console.error(`Błąd podczas pobierania detali gry Steam (${appId}):`, e)
     return null
   }
+}
+
+/**
+ * Pobiera szczegóły dla wielu gier naraz, używając oficjalnego API Steam.
+ * Wykorzystuje bezpieczne pobieranie równoległe w małych paczkach.
+ */
+export const getMultipleSteamAppDetails = async (
+  appIds: (string | number)[]
+): Promise<SteamAppDetails[]> => {
+  const CHUNK_SIZE = 6
+  const results: SteamAppDetails[] = []
+
+  // Pobieramy w małych paczkach równolegle, aby uniknąć limitów i błędów batching'u Steama
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE)
+    const promises = chunk.map((id) => getSteamGameDetails(id))
+    const chunkResults = await Promise.all(promises)
+
+    chunkResults.forEach((res) => {
+      if (res) results.push(res)
+    })
+
+    // Bardzo krótka przerwa między paczkami
+    if (i + CHUNK_SIZE < appIds.length) {
+      await new Promise((resolve) => setTimeout(resolve, 150))
+    }
+  }
+
+  return results
 }
 
 // Typowania dla kategorii featured ze strony steama
