@@ -1,3 +1,5 @@
+import { GameTasteData } from './steamStore'
+
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 export interface AISearchResult {
@@ -237,11 +239,23 @@ export interface AIReviewSummary {
 
 export const fetchAIReviewSummary = async (
   reviewsText: string,
-  apiKey: string
+  apiKey: string,
+  gamerDNA?: string
 ): Promise<AIReviewSummary> => {
   if (!apiKey) {
     throw new Error('Brak klucza API OpenRouter.')
   }
+
+  const personalizationContext = gamerDNA 
+    ? `KRYTYCZNIE WAŻNE: Poniżej znajduje się profil gustu gracza (Gamer DNA). 
+       Twoim zadaniem jest dostosowanie werdyktu pod tego konkretnego użytkownika. 
+       Odnoś się do jego preferencji, porównuj mechaniki gry do tego co lubi, i oceń czy ta gra mu się spodoba.
+       
+       PROFIL GRACZA (Gamer DNA):
+       ${gamerDNA}
+       
+       Jeśli w Gamer DNA są wymienione konkretne gry lub gatunki, użyj tej wiedzy w sekcji 'verdict' oraz 'playIf'/'avoidIf'.`
+    : ""
 
   const payload = {
     model: 'google/gemini-3-flash-preview',
@@ -252,10 +266,14 @@ export const fetchAIReviewSummary = async (
         content: `You are an expert game critic and AI analyzer. The user will provide you with a raw dump of Steam user reviews for a specific game.
                 Analyze the sentiment, recurring praises, and recurring complaints.
                 
+                ${personalizationContext}
+
                 You must reply ONLY with a JSON object containing three keys:
                 1. 'playIf': an array of 3-5 strings (in Polish). Short bullet points about who will enjoy this game and what its strongest points are (e.g. "Zagraj, jeśli lubisz głęboką fabułę").
                 2. 'avoidIf': an array of 3-5 strings (in Polish). Short bullet points about who will hate this game and what its biggest flaws are (e.g. "Unikaj, jeśli nie tolerujesz powtarzalnego grindu").
-                3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers.
+                3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers, HEAVILY PERSONALIZED based on the provided Gamer DNA (if available).
+                
+                If gamerDNA was provided, make sure the verdict starts with something like "Biorąc pod uwagę Twój gust..." or similar personal touch.
 
                 Do not include any other text, markdown blocks, or explanations. ONLY the raw JSON object.`
       },
@@ -586,5 +604,54 @@ export const generateRecommendedTitles = async (
   } catch (e) {
     console.error('generateRecommendedTitles failed:', e)
     return []
+  }
+}
+export const generateGamerDNA = async (
+  tasteData: GameTasteData[],
+  apiKey: string
+): Promise<string> => {
+  if (!apiKey) throw new Error('Brak klucza API OpenRouter.')
+
+  const gamesContext = tasteData
+    .map((g, i) => `${i + 1}. ${g.name} (${g.playtimeHours}h) - GATUNKI: ${g.genres.join(', ')} | TAGI: ${g.tags.join(', ')}`)
+    .join('\n')
+
+  const payload = {
+    model: 'google/gemini-3.1-pro-preview', // Fast/Efficient for summarization
+    messages: [
+      {
+        role: 'system',
+        content: `Jesteś ekspertem profilowania graczy. Twoim zadaniem jest stworzenie "Gamer DNA" - bardzo zwięzłego profilu psychologiczno-rozgrywkowego użytkownika na podstawie jego Top 50 najczęściej granych gier (wraz z tagami i gatunkami).
+        
+        DNA powinno zawierać:
+        - 3-4 główne archetypy gracza (np. "Strateg-Perfekcjonista", "Miłośnik mrocznych RPGów").
+        - Listę 5 mechanik, które ten gracz kocha (np. "Trudna walka", "Zarządzanie zasobami").
+        - Krótkie podsumowanie tego, czego ten gracz SZUKA w grach, a czego UNIKA.
+        
+        Zwróć TYLKO tekst profilu DNA w języku polskim. Bądź konkretny, pomiń uprzejmości. Ten tekst będzie używany jako kontekst dla innego AI do personalizacji recenzji.`
+      },
+      {
+        role: 'user',
+        content: `Oto dane o moich grach:\n\n${gamesContext}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) throw new Error(`OpenRouter Error: ${response.status}`)
+    const data = await response.json()
+    return data.choices[0]?.message?.content || 'Brak danych o profilu.'
+  } catch (e) {
+    console.error('generateGamerDNA failed:', e)
+    throw e
   }
 }

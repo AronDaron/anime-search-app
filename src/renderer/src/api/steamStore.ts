@@ -612,3 +612,61 @@ export const getRecentSteamHits = async (): Promise<SteamFeaturedCategoryItem[]>
     return []
   }
 }
+/**
+ * Pobiera uproszczone dane o zestawie gier (tagi, opis, gatunki) do analizy gustu.
+ */
+export interface GameTasteData {
+  appid: number
+  name: string
+  genres: string[]
+  tags: string[]
+  shortDescription: string
+  playtimeHours: number
+}
+
+export const getGamesTasteData = async (
+  games: SteamOwnedGame[]
+): Promise<GameTasteData[]> => {
+  // Przetwarzamy gry w paczkach po 5, aby nie przeciążyć API i uniknąć blokad
+  const CHUNK_SIZE = 5
+  const results: GameTasteData[] = []
+
+  for (let i = 0; i < games.length; i += CHUNK_SIZE) {
+    const chunk = games.slice(i, i + CHUNK_SIZE)
+    const promises = chunk.map(async (g) => {
+      try {
+        // Próbujemy pobrać dane ze SteamSpy (dla tagów) i Steam Store (dla opisu/gatunków)
+        // SteamSpy jest szybszy dla tagów
+        const [spyData, storeData] = await Promise.all([
+          getSteamGameExtendedStats(g.appid),
+          getSteamGameDetails(g.appid)
+        ])
+
+        const tags = spyData?.tags ? Object.keys(spyData.tags) : []
+        const genres = storeData?.genres ? storeData.genres.map(gen => gen.description) : []
+        
+        return {
+          appid: g.appid,
+          name: g.name,
+          genres: genres,
+          tags: tags.slice(0, 15), // Top 15 tagów wystarczy
+          shortDescription: storeData?.short_description || '',
+          playtimeHours: Math.round(g.playtime_forever / 60)
+        } as GameTasteData
+      } catch (err) {
+        console.error(`Błąd pobierania danych gustu dla ${g.name}:`, err)
+        return null
+      }
+    })
+
+    const chunkResults = await Promise.all(promises)
+    results.push(...chunkResults.filter((r): r is GameTasteData => r !== null))
+    
+    // Krótka przerwa między paczkami, aby być "miłym" dla API
+    if (i + CHUNK_SIZE < games.length) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+  }
+
+  return results
+}

@@ -7,7 +7,10 @@ import {
   SteamSpyGameExtended,
   getSteamRealtimeCCU,
   getSimilarGames,
-  SteamFeaturedCategoryItem
+  SteamFeaturedCategoryItem,
+  getSteamOwnedGames,
+  getGamesTasteData,
+  GameTasteData
 } from '../../api/steamStore'
 import {
   ArrowLeft,
@@ -29,7 +32,7 @@ import {
   Pie
 } from 'recharts'
 import { getSteamGameReviews } from '../../api/steamReviews'
-import { fetchAIReviewSummary, AIReviewSummary } from '../../api/ai'
+import { fetchAIReviewSummary, AIReviewSummary, generateGamerDNA } from '../../api/ai'
 import './GameDetails.css'
 
 import { SteamReviewResponse } from '../../api/steamReviews'
@@ -62,6 +65,12 @@ export const GameDetails: React.FC = () => {
   // Similar Games State
   const [similarGames, setSimilarGames] = useState<SteamFeaturedCategoryItem[]>([])
   const [isSimilarLoading, setIsSimilarLoading] = useState(false)
+
+  // Personalization State
+  const [steamId, setSteamId] = useState(localStorage.getItem('steamIdForPersonalization') || '')
+  const [gamerDNA, setGamerDNA] = useState<string | null>(localStorage.getItem('gamerDNA_v1'))
+  const [isPersonalizing, setIsPersonalizing] = useState(false)
+  const [personalizationError, setPersonalizationError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -154,7 +163,8 @@ export const GameDetails: React.FC = () => {
         return
       }
 
-      const summary = await fetchAIReviewSummary(combinedText, openRouterKey)
+      const finalGamerDNA = gamerDNA || undefined
+      const summary = await fetchAIReviewSummary(combinedText, openRouterKey, finalGamerDNA)
       setAiSummary(summary)
     } catch (err: any) {
       console.error('Błąd AI Review:', err)
@@ -162,6 +172,56 @@ export const GameDetails: React.FC = () => {
     } finally {
       setIsAiLoading(false)
     }
+  }
+
+  const handlePersonalize = async () => {
+    if (!steamId.trim()) return
+    setIsPersonalizing(true)
+    setPersonalizationError(null)
+
+    try {
+      const openRouterKey = import.meta.env.VITE_OPENROUTER_KEY || localStorage.getItem('openRouterApiKey')
+      if (!openRouterKey) {
+        throw new Error('Brak klucza API OpenRouter.')
+      }
+
+      // 1. Get Owned Games
+      const ownedGames = await getSteamOwnedGames(steamId.trim())
+      if (!ownedGames || ownedGames.length === 0) {
+        throw new Error('Nie znaleziono gier. Upewnij się, że profil jest publiczny.')
+      }
+
+      // 2. Sort by playtime and take top 50
+      const top50 = [...ownedGames]
+        .sort((a, b) => b.playtime_forever - a.playtime_forever)
+        .slice(0, 50)
+        .filter(g => g.playtime_forever > 0)
+
+      if (top50.length === 0) {
+        throw new Error('Brak przegranych godzin na koncie.')
+      }
+
+      // 3. Get Taste Data (Tags, Descriptions)
+      const tasteData = await getGamesTasteData(top50)
+
+      // 4. Generate DNA
+      const dna = await generateGamerDNA(tasteData, openRouterKey)
+
+      // 5. Save and Store
+      setGamerDNA(dna)
+      localStorage.setItem('gamerDNA_v1', dna)
+      localStorage.setItem('steamIdForPersonalization', steamId.trim())
+    } catch (err: any) {
+      console.error('Błąd personalizacji:', err)
+      setPersonalizationError(err.message || 'Błąd podczas tworzenia profilu gustu.')
+    } finally {
+      setIsPersonalizing(false)
+    }
+  }
+
+  const handleResetPersonalization = () => {
+    setGamerDNA(null)
+    localStorage.removeItem('gamerDNA_v1')
   }
 
   const handleLoadSimilarGames = async () => {
@@ -553,7 +613,62 @@ export const GameDetails: React.FC = () => {
 
             {activeTab === 'ai-review' && (
               <div className="tab-ai-section glass-panel">
-                <h2 className="tab-title neon-text-purple">The AI Review Board</h2>
+                <div className="ai-header-flex">
+                  <h2 className="tab-title neon-text-purple">The AI Review Board</h2>
+                  {gamerDNA && (
+                    <div className="personalization-badge fade-in">
+                      <Sparkles size={12} /> Personalizacja Aktywna
+                    </div>
+                  )}
+                </div>
+
+                {/* Personalization UI */}
+                <div className="ai-personalization-control glass-panel-inner">
+                  {!gamerDNA ? (
+                    <div className="personalization-input-group">
+                      <div className="input-with-label">
+                        <label>Personalizuj pod swój gust (Steam ID):</label>
+                        <div className="input-row">
+                          <input
+                            type="text"
+                            placeholder="7656119..."
+                            value={steamId}
+                            onChange={(e) => setSteamId(e.target.value)}
+                            disabled={isPersonalizing}
+                          />
+                          <button
+                            className="btn-personalize"
+                            onClick={handlePersonalize}
+                            disabled={isPersonalizing || !steamId.trim()}
+                          >
+                            {isPersonalizing ? (
+                              <div className="small-spinner"></div>
+                            ) : (
+                              'Analizuj moją bibliotekę'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="personalization-hint">
+                        Analizujemy Twoje Top 50 gier, aby werdykt był skrojony pod Ciebie.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="personalization-active-info">
+                      <div className="dna-info">
+                        <span className="dna-label">Twój Gamer DNA jest załadowany.</span>
+                        <button className="btn-reset-dna" onClick={handleResetPersonalization}>
+                          Zmień profil
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {personalizationError && (
+                    <div className="personalization-error">
+                      <AlertTriangle size={14} /> {personalizationError}
+                    </div>
+                  )}
+                </div>
 
                 {!aiSummary && !isAiLoading && !aiError && (
                   <div className="ai-placeholder-msg">
@@ -565,7 +680,7 @@ export const GameDetails: React.FC = () => {
                       onClick={handleLoadAIReview}
                       style={{ marginTop: '1rem', width: 'auto', padding: '8px 20px' }}
                     >
-                      <Sparkles size={16} /> Wygeneruj Raport AI
+                      <Sparkles size={16} /> {gamerDNA ? 'Wygeneruj Spersonalizowany Raport' : 'Wygeneruj Ogólny Raport AI'}
                     </button>
                   </div>
                 )}
