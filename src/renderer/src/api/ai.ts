@@ -298,6 +298,12 @@ export interface AIProfileAnalysis {
   verdictTag: string
 }
 
+export interface GameRecommendation {
+  appid: number
+  name: string
+  justification: string
+}
+
 export const analyzePlayerProfile = async (
   topGames: { name: string; playtimeMinutes: number }[],
   mode: 'serious' | 'roast',
@@ -431,5 +437,154 @@ export const fetchAIRerankedGames = async (
   } catch (e) {
     console.error('AI Reranking failed:', e)
     return candidates.slice(0, 12).map((c) => c.id) // Fallback to first few candidates
+  }
+}
+
+export const fetchAIRecommendations = async (
+  userOwnedGames: string,
+  candidates: { id: number; name: string; tags: string[]; year?: number }[],
+  apiKey: string,
+  yearFilter: 'all' | '2015' = 'all'
+): Promise<GameRecommendation[]> => {
+  if (!apiKey || candidates.length === 0) return []
+
+  const candidatesText = candidates
+    .slice(0, 70)
+    .map((c) => `ID: ${c.id} | Title: ${c.name} ${c.year ? `(${c.year})` : ''} | Tags: ${c.tags.join(', ')}`)
+    .join('\n')
+
+  const yearConstraint = yearFilter === '2015' 
+    ? "4. WAŻNE: Wybieraj WYŁĄCZNIE gry wydane po 2015 roku (nowoczesne tytuły). Ignoruj te ze starszą datą." 
+    : "4. Możesz wybierać gry z dowolnego roku (zarówno klasyki, jak i nowości)."
+
+  const payload = {
+    model: 'google/gemini-3.1-pro-preview',
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `Jesteś światowej klasy ekspertem-doradcą gier wideo. Odpowiedz WYŁĄCZNIE w formacie JSON.
+                 Użytkownik posiada już te gry: ${userOwnedGames}.
+                 Twoim zadaniem jest wybranie dokładnie 12 gier z poniższej listy kandydatów, które najlepiej pasują do gustu użytkownika.
+                 
+                 INFO O LIŚCIE: Niektóre gry na liście to najnowsze światowe premiery rynkowe, których możesz nie mieć w swoim treningu. Oceniaj je na podstawie podanych tagów, tytułu i rocznika.
+                 
+                 ZASADY WYBORU:
+                 1. Wybierz dokładnie 12 gier.
+                 2. PODZIAŁ:
+                    - Powinieneś wybrać pierwsze 4 gry, które są stosunkowo popularne i dobrze oceniane (hity), a pasują do gustu użytkownika.
+                    - Kolejne 8 gier wybierz pod kątem idealnego dopasowania do tagów i mechanik gier użytkownika, NIEZALEŻNIE od ich popularności (szukaj ukrytych perełek, gier niszowych lub zapomnianych).
+                 3. UNIKAJ serii gier, które gracz już posiada. Jeśli gracz ma np. "The Witcher 3", nie proponuj "The Witcher 2" ani żadnej innej gry z tej samej serii/uniwersum. Szukaj innych marek o podobnym klimacie.
+                 ${yearConstraint}
+                 5. Dla każdej gry napisz JEDNO zdanie uzasadnienia w języku polskim ("justification"), wyjaśniające dlaczego ta gra pasuje do jego gustu.
+                 6. Ignoruj gry, które użytkownik już posiada.
+                 7. Zwróć tablicę obiektów.
+                 
+                 Format odpowiedzi:
+                 {
+                   "recommendations": [
+                     { "appid": 123, "name": "Tytuł", "justification": "Bo lubisz gry RPG z otwartym światem." },
+                     ...
+                   ]
+                 }`
+      },
+      {
+        role: 'user',
+        content: `Lista kandydatów:\n${candidatesText}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API Error Response:', errorText)
+        throw new Error(`Błąd API OpenRouter: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices[0]?.message?.content
+    
+    if (!content) {
+        console.error('Empty AI response')
+        return []
+    }
+
+    const parsed = JSON.parse(content)
+    return parsed.recommendations || []
+  } catch (e) {
+    console.error('AI Recommendations failed:', e)
+    return []
+  }
+}
+
+export const generateRecommendedTitles = async (
+  userGames: string,
+  apiKey: string,
+  yearFilter: 'all' | '2015' = 'all'
+): Promise<string[]> => {
+  if (!apiKey) return []
+
+  const yearConstraint = yearFilter === '2015'
+    ? "Szukaj WYŁĄCZNIE gier wydanych po 2015 roku. Absolutnie ignoruj starsze tytuły."
+    : "Możesz sugerować gry z dowolnego okresu (klasyki i nowości)."
+
+  const payload = {
+    model: 'google/gemini-3.1-pro-preview',
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: `Jesteś ekspertem branży gier wideo. Na podstawie listy gier, które użytkownik uwielbia, zaproponuj 35-40 INNYCH tytułów gier, które mogłyby mu się spodobać.
+                 
+                 ZASADY:
+                 1. Zwróć WYŁĄCZNIE listę samych tytułów gier w formacie JSON.
+                 2. ${yearConstraint}
+                 3. UNIKAJ gier z serii, które użytkownik już posiada.
+                 4. Wybieraj gry różnorodne: zarówno duże hity, jak i mniejsze gry niezależne.
+                 5. Tytuły muszą być dokładne (oficjalne nazwy angielskie), aby można je było wyszukać w API Steam.
+                 
+                 Format odpowiedzi:
+                 {
+                   "suggestions": ["Title 1", "Title 2", ...]
+                 }`
+      },
+      {
+        role: 'user',
+        content: `Moje ulubione gry: ${userGames}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) throw new Error(`OpenRouter Error: ${response.status}`)
+
+    const data = await response.json()
+    const content = data.choices[0]?.message?.content
+    if (!content) return []
+
+    const parsed = JSON.parse(content)
+    return parsed.suggestions || []
+  } catch (e) {
+    console.error('generateRecommendedTitles failed:', e)
+    return []
   }
 }

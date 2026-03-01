@@ -132,12 +132,6 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                 Wyszukiwanie
               </button>
               <button
-                className={`nav-btn ${path === '/games/genres' ? 'active' : ''}`}
-                onClick={() => navigate('/games/genres')}
-              >
-                Gatunki
-              </button>
-              <button
                 className={`nav-btn ${path === '/games/bestsellers' ? 'active' : ''}`}
                 onClick={() => navigate('/games/bestsellers')}
               >
@@ -160,6 +154,12 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                 onClick={() => navigate('/games/profile-analyzer')}
               >
                 Analiza Konta
+              </button>
+              <button
+                className={`nav-btn ${path === '/games/recommendations' ? 'active' : ''}`}
+                onClick={() => navigate('/games/recommendations')}
+              >
+                Rekomendacje AI
               </button>
             </>
           )}

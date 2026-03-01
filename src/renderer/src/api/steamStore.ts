@@ -581,7 +581,34 @@ export const getSteamOwnedGames = async (steamId: string): Promise<SteamOwnedGam
     console.warn(`Nie udało się pobrać gier dla Steam ID: ${steamId}. Upewnij się, że profil jest publiczny.`)
     return []
   } catch (e) {
-    console.error(`Błąd podczas pobierania posiadanych gier dla (SteamID: ${steamId}):`, e)
+    return []
+  }
+}
+
+/**
+ * Pobiera najpopularniejsze nowości ze SteamSpy (ostatnie miesiące).
+ */
+export const getRecentSteamHits = async (): Promise<SteamFeaturedCategoryItem[]> => {
+  try {
+    const url = `https://steamspy.com/api.php`
+    const response = await fetchSteamData(url, { request: 'top100in2weeks' }) 
+
+    if (response && typeof response === 'object' && !Array.isArray(response)) {
+      return Object.values(response)
+        .filter((g: any) => g && g.appid)
+        .map((spyGame: any) => ({
+          id: parseInt(spyGame.appid),
+          type: 'game',
+          name: spyGame.name,
+          large_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`,
+          small_capsule_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/capsule_184x69.jpg`,
+          header_image: `https://cdn.akamai.steamstatic.com/steam/apps/${spyGame.appid}/header.jpg`
+        } as SteamFeaturedCategoryItem))
+        .slice(0, 50)
+    }
+    return []
+  } catch (e) {
+    console.error(`Błąd podczas pobierania nowości ze SteamSpy:`, e)
     return []
   }
 }
