@@ -9,8 +9,7 @@ import {
   getSimilarGames,
   SteamFeaturedCategoryItem,
   getSteamOwnedGames,
-  getGamesTasteData,
-  GameTasteData
+  getGamesTasteData
 } from '../../api/steamStore'
 import {
   ArrowLeft,
@@ -238,6 +237,23 @@ export const GameDetails: React.FC = () => {
     }
   }
 
+  const parseOwners = (ownersStr: string): number => {
+    if (!ownersStr) return 0
+    const parts = ownersStr.split('..').map((s) => parseInt(s.replace(/,/g, '').trim()))
+    if (parts.length === 2) {
+      return (parts[0] + parts[1]) / 2
+    }
+    return parts[0] || 0
+  }
+
+  const calculateEstimatedProfit = () => {
+    if (!extraStats?.owners || !game?.price_overview) return 0
+    const avgOwners = parseOwners(extraStats.owners)
+    const price = game.price_overview.final / 100
+    // Wzór: Właściciele * Cena * 0.55 (Steam 30%, VAT, Zwroty, Cena regionalna)
+    return avgOwners * price * 0.55
+  }
+
   useEffect(() => {
     if (activeTab === 'similar') {
       handleLoadSimilarGames()
@@ -368,11 +384,11 @@ export const GameDetails: React.FC = () => {
                         <Pie
                           data={[
                             {
-                              name: 'Positive',
+                              name: 'Pozytywne',
                               value: reviewsResponse.query_summary.total_positive
                             },
                             {
-                              name: 'Negative',
+                              name: 'Negatywne',
                               value: reviewsResponse.query_summary.total_negative
                             }
                           ]}
@@ -386,11 +402,13 @@ export const GameDetails: React.FC = () => {
                         </Pie>
                         <Tooltip
                           contentStyle={{
-                            background: 'rgba(20, 20, 20, 0.9)',
-                            border: '1px solid var(--border-color)',
+                            background: '#1a1a24',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '8px',
-                            fontSize: '11px'
+                            fontSize: '12px',
+                            color: '#fff'
                           }}
+                          itemStyle={{ color: '#fff' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -415,23 +433,20 @@ export const GameDetails: React.FC = () => {
                 <TrendingUp size={16} className="neon-text-cyan" />
                 <span>Szacunkowa Sprzedaż</span>
               </div>
-              <div className="stat-value-small">{extraStats?.owners || 'Brak danych'}</div>
+              <div className="stat-value-small">
+                {extraStats?.owners ? extraStats.owners.replace(/\.\./g, '-') : 'Brak danych'}
+              </div>
             </div>
 
             <div className="sidebar-stat-block">
               <div className="stat-header">
-                <Monitor size={16} className="neon-text-green" />
-                <span>Produkcja</span>
+                <Sparkles size={16} className="neon-text-yellow" />
+                <span>Szacunkowy Zysk</span>
               </div>
-              <div className="extra-meta-info">
-                <div className="meta-item">
-                  <span className="meta-label">Producent:</span>
-                  <span className="meta-value accent">{game.developers?.[0] || 'N/A'}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">Wydawca:</span>
-                  <span className="meta-value">{game.publishers?.[0] || 'N/A'}</span>
-                </div>
+              <div className="stat-value-small neon-text-yellow">
+                {calculateEstimatedProfit() > 0
+                  ? `~${Math.round(calculateEstimatedProfit()).toLocaleString()} ${game.price_overview?.currency || 'PLN'}`
+                  : 'Brak danych cenowych'}
               </div>
             </div>
           </div>
@@ -536,6 +551,14 @@ export const GameDetails: React.FC = () => {
                 <span className="meta-label">Data wydania:</span>
                 <span className="meta-value">{game.release_date.date}</span>
               </div>
+              <div className="meta-row">
+                <span className="meta-label">Producent:</span>
+                <span className="meta-value accent">{game.developers?.[0] || 'N/A'}</span>
+              </div>
+              <div className="meta-row">
+                <span className="meta-label">Wydawca:</span>
+                <span className="meta-value">{game.publishers?.[0] || 'N/A'}</span>
+              </div>
             </div>
 
             <div className="game-tags-cloud">
@@ -614,7 +637,7 @@ export const GameDetails: React.FC = () => {
             {activeTab === 'ai-review' && (
               <div className="tab-ai-section glass-panel">
                 <div className="ai-header-flex">
-                  <h2 className="tab-title neon-text-purple">The AI Review Board</h2>
+                  <h2 className="tab-title neon-text-purple">Panel Werdyktu AI</h2>
                   {gamerDNA && (
                     <div className="personalization-badge fade-in">
                       <Sparkles size={12} /> Personalizacja Aktywna

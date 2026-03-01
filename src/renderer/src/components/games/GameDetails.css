@@ -947,9 +947,12 @@
 /* AI Personalization Styling */
 .ai-header-flex {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  text-align: center;
 }
 
 .personalization-badge {
@@ -1108,4 +1111,20 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.ai-placeholder-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem 0;
+}
+
+.ai-placeholder-msg p {
+  max-width: 600px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
