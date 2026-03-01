@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Filter, Loader2, DollarSign, TrendingUp, Sparkles } from 'lucide-react'
+import { Filter, Loader2, DollarSign, TrendingUp, Sparkles, Gamepad2, Rocket, Zap, Heart, Sword } from 'lucide-react'
 import { GameCard, GameData } from './GameCard'
 import { getSteamStoreFeaturedCategories, getSteamSpyByTag, searchSteamGamesByGenre, SteamFeaturedCategoryItem } from '../../api/steamStore'
 import '../shared/Grid.css'
@@ -103,8 +103,8 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
                     allItems = [...storeGames, ...spyNew]
                 } else {
                     const featured = await getSteamStoreFeaturedCategories()
-                    const storeSpecials = featured?.specials?.items || []
-                    const spySpecials = await getSteamSpyByTag('specials')
+                    const storeSpecials = (featured?.specials?.items || []).filter(item => item.discount_percent > 0)
+                    const spySpecials = (await getSteamSpyByTag('specials')).filter(item => item.discount_percent > 0)
                     allItems = [...storeSpecials, ...spySpecials]
                 }
             } else {
@@ -127,7 +127,7 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
 
                 return {
                     id: item.id.toString(),
-                    title: item.name || 'Nieznany Tytuł',
+                    title: item.name || (item as any).title || 'Nieznany Tytuł',
                     capsuleImage: item.large_capsule_image || item.header_image || '',
                     price: priceInPln,
                     originalPrice: item.original_price ? (item.currency === 'USD' ? item.original_price * 4 / 100 : item.original_price / 100) : undefined,
@@ -160,19 +160,31 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
         <div className="price-tiered-layout fade-in">
             <header className="price-tiered-header">
                 <div className="header-main">
-                    <h1>{title}</h1>
+                    <div className="title-group">
+                        <h1>{title}</h1>
+                        <p className="page-subtitle">Odkryj najlepsze okazje i nowości wyselekcjonowane przez AI</p>
+                    </div>
                     <div className="genre-filter-row">
                         <Filter size={18} className="filter-icon" />
                         <div className="genre-chips-scroll">
-                            {GAME_GENRES.map(genre => (
-                                <button
-                                    key={genre.id}
-                                    className={`genre-chip-mini ${selectedGenre === genre.id ? 'active' : ''}`}
-                                    onClick={() => setSelectedGenre(genre.id)}
-                                >
-                                    {genre.label}
-                                </button>
-                            ))}
+                            {GAME_GENRES.map(genre => {
+                                let GenreIcon = Gamepad2;
+                                if (genre.label === 'Akcja') GenreIcon = Sword;
+                                if (genre.label === 'RPG') GenreIcon = Heart;
+                                if (genre.label === 'Strategia') GenreIcon = Zap;
+                                if (genre.label === 'Przygodowe') GenreIcon = Rocket;
+
+                                return (
+                                    <button
+                                        key={genre.id}
+                                        className={`genre-chip-mini ${selectedGenre === genre.id ? 'active' : ''}`}
+                                        onClick={() => setSelectedGenre(genre.id)}
+                                    >
+                                        <GenreIcon size={14} className="chip-icon" />
+                                        {genre.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -188,21 +200,21 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
             ) : (
                 <div className="price-tiers-container">
                     <PriceTierColumn
-                        title="Okazje do 30 PLN"
+                        title="BUDŻETOWE SKARBY"
                         icon={<Sparkles className="tier-icon" />}
                         games={tier1}
                         colorClass="tier-low"
                         onCardClick={handleCardClick}
                     />
                     <PriceTierColumn
-                        title="Hity do 60 PLN"
+                        title="OPTYMALNE WYBORY"
                         icon={<DollarSign className="tier-icon" />}
                         games={tier2}
                         colorClass="tier-mid"
                         onCardClick={handleCardClick}
                     />
                     <PriceTierColumn
-                        title="Premium 60 PLN+"
+                        title="DOŚWIADCZENIE PREMIUM"
                         icon={<TrendingUp className="tier-icon" />}
                         games={tier3}
                         colorClass="tier-high"
