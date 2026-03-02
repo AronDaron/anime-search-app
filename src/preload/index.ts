@@ -19,6 +19,10 @@ const api = {
   },
   steam: {
     fetch: (url: string) => ipcRenderer.invoke('steam:fetch', url)
+  },
+  anilist: {
+    fetch: (query: string, variables?: Record<string, any>) =>
+      ipcRenderer.invoke('anilist:fetch', query, variables)
   }
 }
 

@@ -25,7 +25,7 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -85,6 +85,13 @@ app.whenReady().then(() => {
     // Steam API Proxy IPC (Bypasses CORS for external APIs in Electron)
     ipcMain.handle('steam:fetch', async (_, url: string) => {
       try {
+        const parsedUrl = new URL(url)
+        const allowedDomains = ['store.steampowered.com', 'steamspy.com', 'api.steampowered.com']
+        
+        if (!allowedDomains.includes(parsedUrl.hostname)) {
+          throw new Error('Niedozwolona domena w wywołaniu proxy steam:fetch')
+        }
+
         // Use native fetch available in Node 18+
         const response = await fetch(url)
         if (!response.ok) {
@@ -96,6 +103,34 @@ app.whenReady().then(() => {
         throw error
       }
     })
+
+    // AniList API Proxy IPC (Bypasses CORS for detailed rate limit error blocks 429)
+    ipcMain.handle(
+      'anilist:fetch',
+      async (_, query: string, variables?: Record<string, any>) => {
+        try {
+          const response = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify({ query, variables })
+          })
+
+          if (!response.ok) {
+            if (response.status === 429) {
+               console.warn("AniList API Rate Limit (429) Exceeded in Main Process");
+            }
+            throw new Error(`AniList API error: ${response.statusText} (${response.status})`)
+          }
+          return await response.json()
+        } catch (error: any) {
+          console.error('AniList API Main Process error:', error.message)
+          throw error
+        }
+      }
+    )
 
     createWindow()
 

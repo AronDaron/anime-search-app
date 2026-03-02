@@ -9,12 +9,11 @@ const OPENROUTER_KEY_STORAGE = 'v_openrouter_api_key'
 export const ApiKeyService = {
   /**
    * Pobiera klucz Steam API.
-   * Szuka najpierw w localStorage, potem w zmiennych środowiskowych.
+   * Szuka wyłącznie w localStorage.
    */
   getSteamKey: (): string => {
     const savedKey = localStorage.getItem(STEAM_KEY_STORAGE)
-    if (savedKey) return savedKey
-    return import.meta.env.VITE_STEAM_API_KEY || ''
+    return savedKey || ''
   },
 
   /**
@@ -30,12 +29,11 @@ export const ApiKeyService = {
 
   /**
    * Pobiera klucz OpenRouter API.
-   * Szuka najpierw w localStorage, potem w zmiennych środowiskowych.
+   * Szuka wyłącznie w localStorage.
    */
   getOpenRouterKey: (): string => {
     const savedKey = localStorage.getItem(OPENROUTER_KEY_STORAGE)
-    if (savedKey) return savedKey
-    return import.meta.env.VITE_OPENROUTER_KEY || ''
+    return savedKey || ''
   },
 
   /**

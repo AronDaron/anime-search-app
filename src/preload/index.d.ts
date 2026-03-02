@@ -18,6 +18,9 @@ declare global {
       steam: {
         fetch: (url: string) => Promise<any>
       }
+      anilist: {
+        fetch: (query: string, variables?: Record<string, any>) => Promise<any>
+      }
     }
   }
 }

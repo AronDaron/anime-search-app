@@ -48,27 +48,38 @@ export interface PageData {
 const ANILIST_API_URL = 'https://graphql.anilist.co'
 
 async function fetchAniList<T>(query: string, variables?: Record<string, any>): Promise<T> {
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
-    body: JSON.stringify({
-      query,
-      variables
-    })
-  }
-
   try {
-    const response = await fetch(ANILIST_API_URL, options)
-    if (!response.ok) {
-      throw new Error(`AniList API error: ${response.statusText}`)
+    // Check if we are in Electron environment with Preload script injected
+    if (typeof window !== 'undefined' && window.api && window.api.anilist) {
+      // Use the IPC proxy defined in main process (circumvents CORS)
+      // @ts-ignore
+      const data = await window.api.anilist.fetch(query, variables)
+      return data.data as T
+    } else {
+      // Fallback for browser environment (e.g., npm run dev:web)
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ query, variables })
+      }
+      const response = await fetch(ANILIST_API_URL, options)
+      if (!response.ok) {
+        throw new Error(`AniList API error: ${response.statusText} (${response.status})`)
+      }
+      const json = (await response.json()) as AniListResponse<T>
+      return json.data
     }
-    const json = (await response.json()) as AniListResponse<T>
-    return json.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching AniList Data:', error)
+    
+    // Attempt basic fallback check if Rate Limited to notify users properly instead of white screens
+    if (error.message && error.message.includes('429')) {
+      console.warn("AniList proxy returned a 429 Rate Limit error. Consider adding a small delay or backing off.")
+    }
+
     throw error
   }
 }
