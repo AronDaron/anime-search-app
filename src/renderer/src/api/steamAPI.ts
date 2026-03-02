@@ -22,7 +22,7 @@ export const fetchSteamData = async (endpointUrl: string, params: Record<string,
   const fullUrl = urlObj.toString()
 
   // Sprawdzamy czy to aplikacja Electron (.exe / Linux App)
-  if (window.electron && window.api && window.api.steam) {
+  if (typeof window !== 'undefined' && window.api && window.api.steam) {
     console.log('[SteamAPI] Pobieranie przez strumień Electron IPC:', fullUrl)
     return await window.api.steam.fetch(fullUrl)
   }
