@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { searchAnime, AnimeMedia } from '../../api/anilist'
 import { fetchAIAnimeTitles } from '../../api/ai'
+import { ApiKeyService } from '../../api/apiKeyService'
 import { NeonCard } from '../shared/NeonCard'
 import '../shared/Grid.css'
 
@@ -58,7 +59,7 @@ export const Search: React.FC<SearchProps> = ({ searchQuery, isAiMode }) => {
 
         if (isAiMode) {
           // Try fetch recommendations from AI using OpenRouter Key optionally provided in env.
-          const apiKey = import.meta.env.VITE_OPENROUTER_KEY || ''
+          const apiKey = ApiKeyService.getOpenRouterKey() || ''
           if (!apiKey) {
             alert(
               'Brak klucza API. Ustal zmienną VITE_OPENROUTER_KEY w pliku .env w korzeniu projektu.'

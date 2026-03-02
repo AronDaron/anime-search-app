@@ -7,6 +7,7 @@ import {
   JikanEpisode
 } from '../../api/anilist'
 import { translateDescriptionToPolish, summarizeReviews, AIAnimeReviewSummary } from '../../api/ai'
+import { ApiKeyService } from '../../api/apiKeyService'
 import {
   Sparkles,
   MessageSquare,
@@ -169,7 +170,7 @@ export const AnimeDetails: React.FC = () => {
           if (cachedTranslation) {
             setTranslatedDescription(cachedTranslation)
           } else {
-            const apiKey = import.meta.env.VITE_OPENROUTER_KEY || ''
+            const apiKey = ApiKeyService.getOpenRouterKey() || ''
             if (apiKey) {
               setIsTranslating(true)
               translateDescriptionToPolish(response.Media.description, apiKey)
@@ -221,7 +222,7 @@ export const AnimeDetails: React.FC = () => {
               .filter(Boolean) as string[]
 
             if (reviewsText.length > 0) {
-              const apiKey = import.meta.env.VITE_OPENROUTER_KEY || ''
+              const apiKey = ApiKeyService.getOpenRouterKey() || ''
               if (apiKey) {
                 setIsSummarizing(true)
                 summarizeReviews(reviewsText, apiKey)

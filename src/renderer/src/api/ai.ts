@@ -2,6 +2,15 @@ import { GameTasteData } from './steamStore'
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+const parseAIJsonResponse = (content: string) => {
+  let cleanContent = content.trim()
+  const match = cleanContent.match(/^```(?:json)?\s*([\s\S]*?)```$/i)
+  if (match) {
+    cleanContent = match[1].trim()
+  }
+  return JSON.parse(cleanContent)
+}
+
 export interface AISearchResult {
   titles: string[]
   searchParams?: {
@@ -93,7 +102,7 @@ export const fetchAIAnimeTitles = async (
   try {
     const content = data.choices?.[0]?.message?.content
     if (!content) return { titles: [] }
-    const parsed = JSON.parse(content)
+    const parsed = parseAIJsonResponse(content)
     return {
       titles: parsed.titles || [],
       searchParams: parsed.searchParams
@@ -179,7 +188,7 @@ export const summarizeReviews = async (
   }
 
   const payload = {
-    model: 'google/gemini-3-flash-preview',
+    model: 'google/gemini-3.1-pro-preview',
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -227,7 +236,7 @@ export const summarizeReviews = async (
     if (!content) return null
 
     try {
-      return JSON.parse(content) as AIAnimeReviewSummary
+      return parseAIJsonResponse(content) as AIAnimeReviewSummary
     } catch (parseError) {
       console.error('Błąd parsowania JSON AI Review:', parseError)
       return null
@@ -265,7 +274,7 @@ export const fetchAIReviewSummary = async (
     : ""
 
   const payload = {
-    model: 'google/gemini-3-flash-preview',
+    model: 'google/gemini-3.1-pro-preview',
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -313,7 +322,7 @@ export const fetchAIReviewSummary = async (
     const content = data.choices?.[0]?.message?.content
 
     console.log('Surowa odpowiedź AI Review:', content)
-    return JSON.parse(content) as AIReviewSummary
+    return parseAIJsonResponse(content) as AIReviewSummary
   } catch (e) {
     console.error('fetchAIReviewSummary error:', e)
     throw e
@@ -397,7 +406,7 @@ export const analyzePlayerProfile = async (
     const content = data.choices?.[0]?.message?.content
 
     console.log('Surowa odpowiedź AI Profile Analyzer:', content)
-    return JSON.parse(content) as AIProfileAnalysis
+    return parseAIJsonResponse(content) as AIProfileAnalysis
   } catch (e) {
     console.error('analyzePlayerProfile error:', e)
     throw e
@@ -471,7 +480,7 @@ export const fetchAIRerankedGames = async (
     const content = data.choices?.[0]?.message?.content
     if (!content) return candidates.slice(0, 12).map(c => c.id)
     
-    const parsed = JSON.parse(content)
+    const parsed = parseAIJsonResponse(content)
     return parsed.rankedIds || []
   } catch (e) {
     console.error('AI Reranking failed:', e)
@@ -563,7 +572,7 @@ export const fetchAIRecommendations = async (
         return []
     }
 
-    const parsed = JSON.parse(content)
+    const parsed = parseAIJsonResponse(content)
     return parsed.recommendations || []
   } catch (e: any) {
     console.error('AI Recommendations failed:', e)
@@ -630,7 +639,7 @@ export const generateRecommendedTitles = async (
     const content = data.choices?.[0]?.message?.content
     if (!content) return []
 
-    const parsed = JSON.parse(content)
+    const parsed = parseAIJsonResponse(content)
     return parsed.suggestions || []
   } catch (e: any) {
     console.error('generateRecommendedTitles failed:', e)

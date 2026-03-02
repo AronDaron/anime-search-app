@@ -45,7 +45,7 @@ export interface PageData {
   }
 }
 
-const ANILIST_API_URL = '/graphql'
+const ANILIST_API_URL = 'https://graphql.anilist.co'
 
 async function fetchAniList<T>(query: string, variables?: Record<string, any>): Promise<T> {
   const options = {

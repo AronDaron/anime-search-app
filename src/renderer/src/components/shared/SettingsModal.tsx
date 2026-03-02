@@ -101,7 +101,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                             <Info size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
                             <p style={{ margin: 0 }}>
-                                Klucze są przechowywane lokalnie w Twojej przeglądarce i nie są wysyłane na nasze serwery. Są używane wyłącznie do bezpośredniej komunikacji z API Steam i OpenRouter.
+                                Klucze są w bezpieczny sposób zapisywane bezpośrednio na dysku Twojego komputera, ponieważ NEO Search działa jako niezależna aplikacja lokalna bez użycia zewnętrznych serwerów. Twoje informacje nigdy nie powędrują w ręce osób trzecich i posłużą wyłącznie do autoryzowania ruchu z Twojej zgody do oficjalnych baz Steam i OpenRouter.
                             </p>
                         </div>
                     </div>
