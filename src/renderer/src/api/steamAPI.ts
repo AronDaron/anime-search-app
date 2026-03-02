@@ -4,6 +4,8 @@
  * - Dla okienkowej aplikacji desktopowej (.exe): wykorzystuje Electron IPC (omija CORS wykorzystując natywny Node.js fetch).
  */
 
+import { ApiKeyService } from './apiKeyService'
+
 // BAZOWE ADRESY STEAM (Mogą być dwa różne, zależnie od potrzebnych danych)
 const STEAM_STORE_URL = 'https://store.steampowered.com'
 // const STEAM_WEB_API_URL = 'https://api.steampowered.com';
@@ -12,8 +14,6 @@ export const fetchSteamData = async (endpointUrl: string, params: Record<string,
   const urlObj = new URL(endpointUrl)
   Object.keys(params).forEach((key) => urlObj.searchParams.append(key, params[key]))
 
-  // Dynamiczny import ze względu na potencjalne cykle lub kolejność inicjalizacji
-  const { ApiKeyService } = await import('./apiKeyService')
   const steamKey = ApiKeyService.getSteamKey()
   if (steamKey) {
     urlObj.searchParams.append('key', steamKey)

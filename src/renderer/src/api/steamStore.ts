@@ -182,7 +182,7 @@ export const getSteamStoreFeaturedCategories = async (): Promise<SteamFeaturedCa
 
     console.error(`Steam StoreAPI błąd statusu dla featuredcategories`)
     return null
-  } catch (e) {
+  } catch (e: any) {
     console.error(`Błąd podczas pobierania kategorii Steam:`, e)
     return null
   }
@@ -243,7 +243,7 @@ export const searchSteamGamesByGenre = async (
     }
 
     return []
-  } catch (e) {
+  } catch (e: any) {
     console.error(`Błąd podczas wyszukiwania gier z gatunku ${genre}:`, e)
     return []
   }
@@ -661,7 +661,6 @@ export const getRecentSteamHits = async (): Promise<SteamFeaturedCategoryItem[]>
 
     if (response && typeof response === 'object' && !Array.isArray(response)) {
       return Object.values(response)
-        .filter((g: any) => g && g.appid)
         .map((spyGame: any) => ({
           id: parseInt(spyGame.appid),
           type: 'game',
@@ -673,7 +672,7 @@ export const getRecentSteamHits = async (): Promise<SteamFeaturedCategoryItem[]>
         .slice(0, 50)
     }
     return []
-  } catch (e) {
+  } catch (e: any) {
     console.error(`Błąd podczas pobierania nowości ze SteamSpy:`, e)
     return []
   }

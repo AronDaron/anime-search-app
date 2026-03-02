@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, net } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -92,14 +92,23 @@ app.whenReady().then(() => {
           throw new Error('Niedozwolona domena w wywołaniu proxy steam:fetch')
         }
 
-        // Use native fetch available in Node 18+
-        const response = await fetch(url)
+        // Use Electron's net.fetch to bypass Cloudflare/CORS effectively
+        const response = await net.fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*'
+          }
+        })
         if (!response.ok) {
           throw new Error(`Steam API HTTP error! status: ${response.status} from ${url}`)
         }
         return await response.json()
       } catch (error: any) {
         console.error('Steam API error:', error.message)
+        dialog.showErrorBox(
+          'Steam API IPC Error', 
+          `Błąd podczas pobierania ze Steama w procesie głównym!\n\nURL: ${url}\nTreść błędu: ${error.message}\nSzczegóły: ${error.stack}`
+        )
         throw error
       }
     })
@@ -109,7 +118,7 @@ app.whenReady().then(() => {
       'anilist:fetch',
       async (_, query: string, variables?: Record<string, any>) => {
         try {
-          const response = await fetch('https://graphql.anilist.co', {
+          const response = await net.fetch('https://graphql.anilist.co', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
