@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Search as SearchIcon, Sparkles } from 'lucide-react'
+import { Search as SearchIcon, Sparkles, Settings } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './Navbar.css'
 
@@ -8,9 +8,10 @@ interface NavbarProps {
   setSearchQuery: (query: string) => void
   isAiMode: boolean
   setIsAiMode: (ai: boolean) => void
+  onOpenSettings: () => void
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isAiMode }) => {
+export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isAiMode, onOpenSettings }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const path = location.pathname
@@ -166,6 +167,14 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
 
           <button className="nav-btn btn-home-accent" onClick={goHome}>
             Główna
+          </button>
+
+          <button
+            className="nav-btn nav-btn-settings"
+            onClick={onOpenSettings}
+            title="Ustawienia API"
+          >
+            <Settings size={20} />
           </button>
         </div>
       </div>

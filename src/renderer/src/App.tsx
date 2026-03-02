@@ -18,6 +18,7 @@ import { GamesPriceTieredView } from './components/games/GamesPriceTieredView'
 import { GamesProfileAnalyzer } from './components/games/GamesProfileAnalyzer'
 import { GameRecommendationsView } from './components/games/GameRecommendationsView'
 import { GamesCalendarView } from './components/games/GamesCalendarView'
+import { SettingsModal } from './components/shared/SettingsModal'
 import './assets/index.css'
 
 // Force TS server refresh
@@ -25,6 +26,7 @@ import './assets/index.css'
 function App(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
   const [isAiMode, setIsAiMode] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const location = useLocation()
 
   const isGames = location.pathname.startsWith('/games')
@@ -36,6 +38,7 @@ function App(): React.JSX.Element {
         setSearchQuery={setSearchQuery}
         isAiMode={isAiMode}
         setIsAiMode={setIsAiMode}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       <main className="main-content">
@@ -80,6 +83,8 @@ function App(): React.JSX.Element {
           <Route path="/games/:id" element={<GameDetails />} />
         </Routes>
       </main>
+
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   )
 }

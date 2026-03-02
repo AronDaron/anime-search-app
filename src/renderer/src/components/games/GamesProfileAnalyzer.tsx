@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { getSteamOwnedGames, SteamOwnedGame } from '../../api/steamStore'
 import { analyzePlayerProfile, AIProfileAnalysis } from '../../api/ai'
+import { ApiKeyService } from '../../api/apiKeyService'
 import { Search, Flame, Brain, AlertCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import './GamesProfileAnalyzer.css'
@@ -23,9 +24,9 @@ export const GamesProfileAnalyzer: React.FC = () => {
         setTopGames([])
 
         try {
-            const apiKey = import.meta.env.VITE_OPENROUTER_KEY
+            const apiKey = ApiKeyService.getOpenRouterKey()
             if (!apiKey) {
-                throw new Error('Brak klucza API OpenRouter (VITE_OPENROUTER_KEY) w zmiennych środowiskowych.')
+                throw new Error('Brak klucza API OpenRouter. Dodaj go w ustawieniach aplikacji.')
             }
 
             const ownedGames = await getSteamOwnedGames(steamId.trim())

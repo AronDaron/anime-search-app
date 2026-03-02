@@ -11,6 +11,7 @@ import {
   getSteamOwnedGames,
   getGamesTasteData
 } from '../../api/steamStore'
+import { ApiKeyService } from '../../api/apiKeyService'
 import {
   ArrowLeft,
   Monitor,
@@ -153,8 +154,7 @@ export const GameDetails: React.FC = () => {
         .map((r) => r.review)
         .join('\n\n---NEXT REVIEW---\n\n')
 
-      const openRouterKey =
-        import.meta.env.VITE_OPENROUTER_KEY || localStorage.getItem('openRouterApiKey')
+      const openRouterKey = ApiKeyService.getOpenRouterKey()
 
       if (!openRouterKey) {
         setAiError('Brak klucza API OpenRouter. Uzbrój aplikację w ustawieniach.')
@@ -179,7 +179,7 @@ export const GameDetails: React.FC = () => {
     setPersonalizationError(null)
 
     try {
-      const openRouterKey = import.meta.env.VITE_OPENROUTER_KEY || localStorage.getItem('openRouterApiKey')
+      const openRouterKey = ApiKeyService.getOpenRouterKey()
       if (!openRouterKey) {
         throw new Error('Brak klucza API OpenRouter.')
       }

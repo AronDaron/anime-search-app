@@ -9,11 +9,12 @@ const STEAM_STORE_URL = 'https://store.steampowered.com'
 // const STEAM_WEB_API_URL = 'https://api.steampowered.com';
 
 export const fetchSteamData = async (endpointUrl: string, params: Record<string, string> = {}) => {
-  // Przyklejamy parametry
   const urlObj = new URL(endpointUrl)
   Object.keys(params).forEach((key) => urlObj.searchParams.append(key, params[key]))
 
-  const steamKey = import.meta.env.VITE_STEAM_API_KEY
+  // Dynamiczny import ze względu na potencjalne cykle lub kolejność inicjalizacji
+  const { ApiKeyService } = await import('./apiKeyService')
+  const steamKey = ApiKeyService.getSteamKey()
   if (steamKey) {
     urlObj.searchParams.append('key', steamKey)
   }

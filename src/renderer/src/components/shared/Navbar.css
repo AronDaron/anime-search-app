@@ -144,6 +144,20 @@
   text-shadow: 0 0 8px rgba(191, 0, 255, 0.6);
 }
 
+.nav-btn-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem !important;
+  color: var(--text-muted) !important;
+}
+
+.nav-btn-settings:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(30deg);
+}
+
 .navbar-brand-group {
   display: flex;
   align-items: center;

@@ -5,6 +5,7 @@ import { Bot, Sparkles, SlidersHorizontal, Search, AlertCircle } from 'lucide-re
 import { getAnimeByExactTitle, searchAnime, AnimeMedia } from '../api/anilist'
 import { searchSteamGames, searchSteamGamesByGenre, getSteamGameExtendedStats } from '../api/steamStore'
 import { fetchAIAnimeTitles, AISearchResult, fetchAIRerankedGames, CandidateGame } from '../api/ai'
+import { ApiKeyService } from '../api/apiKeyService'
 import { NeonCard } from '../components/shared/NeonCard'
 import './AISearchView.css'
 import '../components/shared/Grid.css'
@@ -23,9 +24,8 @@ export const AISearchView: React.FC<AISearchViewProps> = ({ domain = 'anime' }) 
   const [aiParams, setAiParams] = useState<AISearchResult['searchParams'] | null>(null)
   const [searchStep, setSearchStep] = useState<string>('')
 
-  const [apiKey] = useState(
-    import.meta.env.VITE_OPENROUTER_KEY || localStorage.getItem('openRouterApiKey') || ''
-  )
+  // Use ApiKeyService to get the current key (from localStorage or .env)
+  const apiKey = ApiKeyService.getOpenRouterKey()
 
   // Explicit manual filters that override AI if set
   const [manualYear, setManualYear] = useState<string>('')

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { getSteamOwnedGames, getSteamGameExtendedStats, getSteamGameDetails, searchSteamGames, getRecentSteamHits } from '../../api/steamStore'
 import { fetchAIRecommendations, GameRecommendation, generateRecommendedTitles } from '../../api/ai'
+import { ApiKeyService } from '../../api/apiKeyService'
 import { Search, Sparkles, AlertCircle, ExternalLink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import './GameRecommendationsView.css'
@@ -24,9 +25,9 @@ export const GameRecommendationsView: React.FC = () => {
         setStatus('Pobieranie Twojej biblioteki Steam...')
 
         try {
-            const apiKey = import.meta.env.VITE_OPENROUTER_KEY
+            const apiKey = ApiKeyService.getOpenRouterKey()
             if (!apiKey) {
-                throw new Error('Brak klucza API OpenRouter (VITE_OPENROUTER_KEY) w zmiennych środowiskowych.')
+                throw new Error('Brak klucza API OpenRouter. Dodaj go w ustawieniach aplikacji.')
             }
 
             const ownedGames = await getSteamOwnedGames(steamId.trim())
