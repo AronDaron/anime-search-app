@@ -1,42 +1,41 @@
-# Neo Search (Anime Search App) 🌌
+# Neo Search (Anime & Games) 🌌🎮
 
-Nowoczesna aplikacja desktopowa (Electron) oraz webowa (Vite) służąca jako zaawansowana wyszukiwarka japońskiej popkultury ze wsparciem Sztucznej Inteligencji.
+Nowoczesna aplikacja desktopowa (Electron) oraz webowa (Vite) służąca jako zaawansowana wyszukiwarka japońskiej popkultury oraz gier wideo, zasilana przez potężne wsparcie Sztucznej Inteligencji (LLM).
 
-Głównym założeniem projektu jest stworzenie szybkiego, zjawiskowego podziału eksploracji anime, dając możliwość m.in błyskawicznego podglądu informacji, ratingów oraz ocen dla _każdego najmniejszego odcinka z osobna_ pobieranego za pomocą wbudowanych scraperów.
+Głównym założeniem projektu jest stworzenie szybkiego, zjawiskowego centrum eksploracji rozrywki, dając możliwość m.in błyskawicznego podglądu informacji, generowania opinii, zaawansowanego podpowiadania tytułów za pomocą modelu językowego oraz asystenta rekomendującego pozycje pod unikalne DNA Gracza.
 
 ## 🚀 Technologie
 
-Projekt zbudowany jest w oparciu o solidne, najnowsze i najszybsze rozwiązania:
+Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 
-- **Core:** Node.js, Electron (via `electron-vite`)
+- **Środowisko:** Node.js, Electron (via `electron-vite`) z pełnym wsparciem Strict Sandbox Security
 - **Frontend:** React 19 (TypeScript), `react-router-dom`
-- **Styling:** Vanilla CSS, autorski system ułożenia Glassmorphism & Neon (Dark Theme)
-- **Zarządzanie stanem offline:** wbudowany instalator SQL dzięki modułowi `better-sqlite3` (ukryty proces Main chroniony Preload-bridge'm obrabiający Historię oraz Ulubione)
+- **Styling:** Vanilla CSS, autorski system designu "Glassmorphism & Neon" z dynamicznymi motywami (Cyjan dla Anime, Zieleń dla Gier)
+- **Zarządzanie stanem offline & Cache:** wbudowana i zoptymalizowana lokalna baza SQL dzięki modułowi `better-sqlite3` (ukryta w procesie Main, bezpiecznie tunelowana przez IPC do zapisu tłumaczeń, historii i ocen profilowych użytkownika)
+- **Sieć:** Electron `net.fetch` zintegrowany z backendem IPC, zdolny do omijania restrykcyjnych osłon Anty-Bot (np. Cloudflare) i barier CORS ze strumieniowaniem.
 
 ## 📡 Używane API i Źródła
 
-- **AniList GraphQL API:** Serce aplikacji odpytywane autorskimi kwerendami dociągającymi m.in logikę Sezonów, Relacji (Franchise/Prequel/Sequel), Obsady czy Dat.
-- **OpenRouter (AI Search):** Opcjonalny moduł wyszukiwarki wykorzystujący zasilane m.in. modelem `gemini-2.5-flash-free` inteligentne przetwarzanie fabuły, wyszukujące anime po opisie tekstu "wolnego" użytkownika.
-- **Jikan API (MyAnimeList):** Asynchroniczna integracja ze scraperami MAL załadowana paginacyjnymi próbkami (by obejść restrykcje serwera MAL), celowana w dostarczanie autentycznych ocean odcinkowych w punktacji 1.0 - 10.0 dla sekcji "Odcinki".
+- **Steam API & SteamSpy:** Świeże i dokładne metadane o grach PC, asynchroniczna integracja statystyk CCU (Aktywni Gracze w tym momencie) i list bestsellerów.
+- **AniList GraphQL API:** Serce sekcji anime odpytywane autorskimi kwerendami dociągającymi m.in logikę Sezonów, Relacji (Franchise/Prequel/Sequel), Obsady czy Dat.
+- **OpenRouter (AI Assistant):** Moduł potężnego asystenta wykorzystujący m.in. model `gemini-2.5-flash-free` do inteligentnego przetwarzania fabuły, analizy bibliotek z grami, rerankingu hitów oraz tworzenia podsumowań recenzji w pigułce z użyciem wymuszonych schematów JSON.
+- **Jikan API (MyAnimeList):** Asynchroniczna integracja ze scraperami MAL załadowana paginacyjnymi podzbiórkami, docelowo dostarczająca autentyczne oceny per odcinek.
 
 ## ✨ Główne Funkcje (Feature list)
 
-- **Inteligentny Navbar:** Dynamicznie adaptujący się pasek rozwijany nawigujący pomiędzy modułami (np. Neo Anime, Neo Gry) o pełnej elastyczności zmiennych barw np. Magenta / Cyan.
-- **Rozszerzone Filtrowanie Anime:**
-  - Wyszukiwarka oparta o tekst klasyczny / tytuły.
-  - Dedekowane Okno "Gatunki": Pula setek tagów do selekcjonowania po wariancie (Action, Sci-Fi) i rocznikowych widełkach.
-  - Dedekowane Okno "Sezony": Automatycznie interpretujący datę moduł kalendarza emitowanych w aktualnej ramówce sezonowej anime.
-- **Ai Plot Search:** Możliwość wpisania do wyszukiwarki np. "Anime o gościu który walczy używając łańcuchów obok blondyna" - w odpowiedź zwracane są karty pasujących tytułów (Wymagany klucz zmiennej środowiskowej `.env`: `VITE_OPENROUTER_KEY`).
-- **Anime Details (Zakładkowo - Kartowe):** Rezygnacja z ogromnego przewijania w dół. Podsumowanie ekranowane przez UI-Tabs: Informacje, Odcinki (ze zdjęciami), Rozbudowana Obsada (Role, Postacie, Aktorzy) i Statystyki - ukryte w pięknej szklistej siatce _Grid_.
+- **AI Discovery & Gamer DNA:** Potężny system hybrydowy analizujący bazę ~100 tagów Steam i ekstrahujący parametry z zapytań użytkownika. Profil z 50 najogrywaniejszymi tytułami gracza może posłużyć by wygenerować jemu unikalny "Roast" profilu i rekomendować pasujące idealnie pod jego gusta inne produkcje ubrane w personalizowany werdykt.
+- **Moduł Gier Steam na sterydach:** Przeszukiwanie sklepu z podziałem na ceny (darmowe, do 30 PLN, 60+ PLN), widoki kalendarzowe nadchodzących gier, kategoryzowanie po blisko 40 odrębnych dokładnych gatunkach oraz "Infinite Scroll" na potężnych bibliotekach tysięcy kart bez mulenia komputera. Dynamiczny fallback miniaturek ładujący kapsułki ratunkowe w razie braku materiałów CDN od deweloperów.
+- **Inteligentny Navbar:** Dynamicznie adaptujący się pasek rozwijany nawigujący pomiędzy przestrzeniami (Neon Anime / Szmaragdowe Gry), animowany zaawansowanym trybem pigułki.
+- **Anime Details (Zakładkowo-Bento-Kartowe):** Zoptymalizowany pod minimalne przewijanie interfejs informacyjny: Informacje, Odcinki, Obsada i Statystyki - ukryte w pięknej szklistej siatce *Bento Box* ze wsparciem interaktywnych analitycznych wykresów.
 
 ## 🛠️ Instalacja i Uruchomienie
 
 ### Wymagania
 
-- Node.js
-- Odblokowany ewentualny Firewall (szczególnie jeśli działa pod LXC / Proxmox w testowaniu trybu WEB)
+- Node.js (serwer Node oraz npm)
+- Opcjonalnie: Prywatny klucz OpenRouter wpisany w ustawienia programu dla zniesienia limitów LLM'a.
 
-### Szybki start
+### Szybki start deweloperski
 
 ```bash
 # Sklonuj repo
@@ -45,19 +44,21 @@ $ git clone [url-repo]
 # Zainstaluj zależności
 $ npm install
 
-# Uruchom bezpieczny serwer deweloperski Web z udostępnieniem dla hosta
+# Uruchom bezpośrednio środowisko deweloperskie przeglądarkowe z dostępem do sieci LAN:
 $ npm run dev:web
 
-# LUB Uruchom bezpośrednio środowisko deweloperskie Electron
+# LUB Uruchom bezpośrednio środowisko deweloperskie natywnego Electrona:
 $ npm run dev
 ```
 
-### Budowanie (Deploy)
+### Budowanie Edycji Produkcyjnej (Deploy)
+
+Aplikacja ma restrykcyjnie włączoną ochronę `sandbox: true` i pakuje się jako zamknięty, nietykalny plik wykonywalny ze wbudowanym oknem Chromium. Omija on weryfikacje CORS przeglądarek przy strzałach na serwery zewnętrze.
 
 ```bash
-# Windows (.exe)
+# Budowanie Instalatora oraz .exe (Windows)
 $ npm run build:win
 
-# Linux (.AppImage / .deb)
+# Budowanie dla Linuxa (.AppImage / .deb)
 $ npm run build:linux
 ```

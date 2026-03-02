@@ -27,15 +27,15 @@ Logika bazuje na standardowym środowisku `electron-vite` i dzieli się w głów
 
 Proces działający w serwerze Node.js, posiada pełne prawo dostępu do operacji dyskowych systemu.
 
-- `index.ts`: Plik startowy aplikacji. Od tego miejsca ładuje się ikona Electrona, tworzone zostaje główne okno (BrowserWindow). Tutaj też zadeklarowane są połączenia (np. `ipcMain.handle()`) pozwalające oknu interkomunikować się z ukrytą bazą danych SQLite.
+- `index.ts`: Plik startowy aplikacji. Od tego miejsca ładuje się ikona Electrona, tworzone zostaje główne okno (BrowserWindow) ze wsparciem surowego środowiska `sandbox: true`. Zadeklarowane są tutaj połączenia (np. `ipcMain.handle()`) pozwalające oknu komunikować się z bazą danych SQLite oraz tunelować zapytania do zewnętrznych API ryzykujących blokady CORS/Cloudflare (Steam, AniList). Do zapytań tych zamiast globalnego Node.js `fetch` używany jest moduł Chromium **`net.fetch`**, który skutecznie obchodzi ograniczenia anty-bot, symulując pełnoprawne żądanie przeglądarkowe wraz ze strumieniowaniem.
 - `database.ts`: Skrypt utrzymujący połączenie z bazą `better-sqlite3`. Tworzy tabele `favorites` (Ulubione anime), `history` (ostatnie wyszukiwania), `translations` (polskie opisy fabuły) oraz `review_summaries` (polskie streszczenia recenzji AI). Znajdują się tu komendy obsługujące zapis i odczyt z bazy. Plik z bazą zapisywany jest bezinwazyjnie w `%APPDATA%` / folderze użytkownika poprzez zmienną ścieżki z `app.getPath('userData')`.
 
 ### 2. Preload Script (`src/preload/`) - Most bezpieczeństwa
 
 Elektron ze względów bezpieczeństwa zamyka okno Reacta tak, by nie mogło ono używać API systemu (np. czytać dysku). Zamek ten otwiera skrypt "Preload", który łączy oba te światy wystawiając okrojone kanały.
 
-- `index.ts`: Kod rejestrujący API globalnej zmiennej na oknie przeglądarki używając `contextBridge.exposeInMainWorld()`. Tutaj deklarujemy że pod zmienną `window.api.db` mamy zestaw asynchronicznych akcji wysyłających polecenia do Maina (`ipcRenderer.invoke`).
-- `index.d.ts`: Plik pomocniczy napisany w TypeScriptcie. Udostępnia silnikowi typescriptu w Reakcie wiedzę o tym, że `window.api.db` faktycznie istnieje i ma odpowiednie funkcje (zapobiega błędom TS). Zadeklarowane tutaj są np. Promise zwracające historię wyszukiwań.
+- `index.ts`: Kod rejestrujący API globalnej zmiennej na oknie przeglądarki używając `contextBridge.exposeInMainWorld()`. Ze względu na ekstremalnie restrykcyjne reguły `sandbox: true` wzniesione w oknie `BrowserWindow`, skrypt ten **nie może** polegać na wstrzykiwanych pakietach zewnętrznych (jak np. `@electron-toolkit/preload`), uderzając natychmiastowym crashem całego mostu IPC. Może swobodnie importować jedynie natywny moduł `electron`. Deklaruje asynchroniczne kanały (`ipcRenderer.invoke`) dostępne w aplikacji Frontendu pod zmienną `window.api`.
+- `index.d.ts`: Plik pomocniczy napisany w TypeScriptcie. Udostępnia silnikowi typescriptu w Reakcie wiedzę o tym, że `window.api` (w tym `.db`, `.steam`, `.anilist`) faktycznie istnieje i ma odpowiednie funkcje (zapobiega błędom TS i kompilacji). Zadeklarowane tutaj są np. obietnice zwracające historię wyszukiwań.
 
 ### 3. Renderer Process (`src/renderer/`) - React Frontend
 
