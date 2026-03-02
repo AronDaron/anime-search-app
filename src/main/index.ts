@@ -1,7 +1,19 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+
+import {
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  addHistory,
+  getHistory,
+  addTranslation,
+  getTranslation,
+  addReviewSummary,
+  getReviewSummary
+} from './database'
 
 function createWindow(): void {
   // Create the browser window.
@@ -52,50 +64,48 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // Database IPC Handlers
-  const {
-    addFavorite,
-    removeFavorite,
-    getFavorites,
-    addHistory,
-    getHistory,
-    addTranslation,
-    getTranslation,
-    addReviewSummary,
-    getReviewSummary
-  } = require('./database')
-  ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
-  ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
-  ipcMain.handle('db:getFavorites', () => getFavorites())
-  ipcMain.handle('db:addHistory', (_, query) => addHistory(query))
-  ipcMain.handle('db:getHistory', () => getHistory())
-  ipcMain.handle('db:addTranslation', (_, animeId, desc) => addTranslation(animeId, desc))
-  ipcMain.handle('db:getTranslation', (_, animeId) => getTranslation(animeId))
-  ipcMain.handle('db:addReviewSummary', (_, animeId, summary) => addReviewSummary(animeId, summary))
-  ipcMain.handle('db:getReviewSummary', (_, animeId) => getReviewSummary(animeId))
+  // Global error handler to catch silent crashes before or after windows open
+  process.on('uncaughtException', (error) => {
+    dialog.showErrorBox('Krytyczny Błąd Aplikacji (Uncaught Exception)', `Aplikacja napotkała nieoczekiwany błąd i musi zostać wyłączona.\n\nSzczegóły:\n${error.message}\n\nStack:\n${error.stack}`)
+    app.exit(1)
+  })
 
-  // Steam API Proxy IPC (Bypasses CORS for external APIs in Electron)
-  ipcMain.handle('steam:fetch', async (_, url: string) => {
-    try {
-      // Use native fetch available in Node 18+
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`Steam API HTTP error! status: ${response.status} from ${url}`)
+  try {
+    // Database IPC Handlers
+    ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
+    ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
+    ipcMain.handle('db:getFavorites', () => getFavorites())
+    ipcMain.handle('db:addHistory', (_, query) => addHistory(query))
+    ipcMain.handle('db:getHistory', () => getHistory())
+    ipcMain.handle('db:addTranslation', (_, animeId, desc) => addTranslation(animeId, desc))
+    ipcMain.handle('db:getTranslation', (_, animeId) => getTranslation(animeId))
+    ipcMain.handle('db:addReviewSummary', (_, animeId, summary) => addReviewSummary(animeId, summary))
+    ipcMain.handle('db:getReviewSummary', (_, animeId) => getReviewSummary(animeId))
+
+    // Steam API Proxy IPC (Bypasses CORS for external APIs in Electron)
+    ipcMain.handle('steam:fetch', async (_, url: string) => {
+      try {
+        // Use native fetch available in Node 18+
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`Steam API HTTP error! status: ${response.status} from ${url}`)
+        }
+        return await response.json()
+      } catch (error: any) {
+        console.error('Steam API error:', error.message)
+        throw error
       }
-      return await response.json()
-    } catch (error: any) {
-      console.error('Steam API error:', error.message)
-      throw error
-    }
-  })
+    })
 
-  createWindow()
+    createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
+    app.on('activate', function () {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  } catch (err: any) {
+    dialog.showErrorBox('Krytyczny Błąd Uruchamiania (Initialization)', `Błąd podczas ładowania modułów lub bazy danych:\n\n${err.message}\n\nStack:\n${err.stack}`)
+    app.exit(1)
+  }
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
