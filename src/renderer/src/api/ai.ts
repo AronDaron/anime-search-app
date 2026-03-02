@@ -84,8 +84,15 @@ export const fetchAIAnimeTitles = async (
   }
 
   const data = await response.json()
+  
+  if (data.error) {
+    console.error('OpenRouter API Error:', data.error)
+    throw new Error(data.error.message || 'OpenRouter API Error')
+  }
+
   try {
-    const content = data.choices[0].message.content
+    const content = data.choices?.[0]?.message?.content
+    if (!content) return { titles: [] }
     const parsed = JSON.parse(content)
     return {
       titles: parsed.titles || [],
@@ -300,7 +307,10 @@ export const fetchAIReviewSummary = async (
     }
 
     const data = await response.json()
-    const content = data.choices[0].message.content
+    
+    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error')
+    
+    const content = data.choices?.[0]?.message?.content
 
     console.log('Surowa odpowiedź AI Review:', content)
     return JSON.parse(content) as AIReviewSummary
@@ -381,7 +391,10 @@ export const analyzePlayerProfile = async (
     }
 
     const data = await response.json()
-    const content = data.choices[0].message.content
+    
+    if (data.error) throw new Error(data.error.message || 'OpenRouter API Error')
+    
+    const content = data.choices?.[0]?.message?.content
 
     console.log('Surowa odpowiedź AI Profile Analyzer:', content)
     return JSON.parse(content) as AIProfileAnalysis
@@ -413,7 +426,7 @@ export const fetchAIRerankedGames = async (
     .join('\n')
 
   const payload = {
-    model: 'google/gemini-2.0-flash-exp', // Fast and cheap for reranking
+    model: 'google/gemini-3.1-pro-preview', // Fast and cheap for reranking
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -449,7 +462,15 @@ export const fetchAIRerankedGames = async (
     })
 
     const data = await response.json()
-    const content = data.choices[0].message.content
+    
+    if (data.error) {
+        console.error('OpenRouter API Error:', data.error);
+        return candidates.slice(0, 12).map((c) => c.id);
+    }
+    
+    const content = data.choices?.[0]?.message?.content
+    if (!content) return candidates.slice(0, 12).map(c => c.id)
+    
     const parsed = JSON.parse(content)
     return parsed.rankedIds || []
   } catch (e) {
@@ -530,7 +551,12 @@ export const fetchAIRecommendations = async (
     }
 
     const data = await response.json()
-    const content = data.choices[0]?.message?.content
+    
+    if (data.error) {
+        throw new Error(data.error.message || 'Błąd API OpenRouter')
+    }
+    
+    const content = data.choices?.[0]?.message?.content
     
     if (!content) {
         console.error('Empty AI response')
@@ -539,9 +565,9 @@ export const fetchAIRecommendations = async (
 
     const parsed = JSON.parse(content)
     return parsed.recommendations || []
-  } catch (e) {
+  } catch (e: any) {
     console.error('AI Recommendations failed:', e)
-    return []
+    throw e
   }
 }
 
@@ -596,14 +622,19 @@ export const generateRecommendedTitles = async (
     if (!response.ok) throw new Error(`OpenRouter Error: ${response.status}`)
 
     const data = await response.json()
-    const content = data.choices[0]?.message?.content
+    
+    if (data.error) {
+        throw new Error(data.error.message || 'Błąd API OpenRouter')
+    }
+    
+    const content = data.choices?.[0]?.message?.content
     if (!content) return []
 
     const parsed = JSON.parse(content)
     return parsed.suggestions || []
-  } catch (e) {
+  } catch (e: any) {
     console.error('generateRecommendedTitles failed:', e)
-    return []
+    throw e
   }
 }
 export const generateGamerDNA = async (
@@ -649,7 +680,12 @@ export const generateGamerDNA = async (
 
     if (!response.ok) throw new Error(`OpenRouter Error: ${response.status}`)
     const data = await response.json()
-    return data.choices[0]?.message?.content || 'Brak danych o profilu.'
+
+    if (data.error) {
+        throw new Error(data.error.message || 'Błąd API OpenRouter')
+    }
+    
+    return data.choices?.[0]?.message?.content || 'Brak danych o profilu.'
   } catch (e) {
     console.error('generateGamerDNA failed:', e)
     throw e
