@@ -301,13 +301,7 @@ export const GameDetails: React.FC = () => {
 
   return (
     <div className="game-details-container fade-in">
-      {/* Tło wielkiego rozmiaru (Header/Hero) */}
-      <div
-        className="game-hero-background"
-        style={{ backgroundImage: `url(${game.background_raw || game.background})` }}
-      >
-        <div className="game-hero-overlay"></div>
-      </div>
+      {/* Usunięto lokalne tło gry, by korzystało z ogólnego panoramicznego tła aplikacji */}
 
       <div className="game-content-wrapper">
         {/* Wróć & Tytuł */}
