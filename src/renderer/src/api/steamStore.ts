@@ -75,13 +75,14 @@ export interface SteamSpyGameExtended {
  * Endpoint ten nie wymaga klucza API, ale jest mocno blokowany przez schematy CORS (dlatego korzystamy z hybrydy).
  */
 export const getSteamGameDetails = async (
-  appId: string | number
+  appId: string | number,
+  lang: string = 'polish'
 ): Promise<SteamAppDetails | null> => {
   try {
     const url = `https://store.steampowered.com/api/appdetails`
     // Dodajemy parametr l=english albo l=polish, zeby dostać dane w preferowanym języku (jeśli są)
     // cc=PL wymusza ceny w polskiej walucie i polski region cenowy
-    const response = await fetchSteamData(url, { appids: appId.toString(), l: 'polish', cc: 'PL' })
+    const response = await fetchSteamData(url, { appids: appId.toString(), l: lang, cc: 'PL' })
 
     // Steam Store API zwraca obiekt, którego kluczem na roocie jest ID gry: { "1091500": { success: true, data: {...} } }
     const gameDataRoot = response[appId.toString()]
@@ -104,7 +105,8 @@ export const getSteamGameDetails = async (
  * Wykorzystuje bezpieczne pobieranie równoległe w małych paczkach.
  */
 export const getMultipleSteamAppDetails = async (
-  appIds: (string | number)[]
+  appIds: (string | number)[],
+  lang: string = 'polish'
 ): Promise<SteamAppDetails[]> => {
   const CHUNK_SIZE = 6
   const results: SteamAppDetails[] = []
@@ -112,7 +114,7 @@ export const getMultipleSteamAppDetails = async (
   // Pobieramy w małych paczkach równolegle, aby uniknąć limitów i błędów batching'u Steama
   for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
     const chunk = appIds.slice(i, i + CHUNK_SIZE)
-    const promises = chunk.map((id) => getSteamGameDetails(id))
+    const promises = chunk.map((id) => getSteamGameDetails(id, lang))
     const chunkResults = await Promise.all(promises)
 
     chunkResults.forEach((res) => {
@@ -243,6 +245,39 @@ export const searchSteamGamesByGenre = async (
     return []
   } catch (e) {
     console.error(`Błąd podczas wyszukiwania gier z gatunku ${genre}:`, e)
+    return []
+  }
+}
+
+/**
+ * Pobiera listę popularnych nadchodzących premier bezpośrednio ze Steam Search API.
+ */
+export const getSteamPopularComingSoon = async (count: number = 50): Promise<number[]> => {
+  try {
+    const url = `https://store.steampowered.com/search/results/`
+    const response = await fetchSteamData(url, { 
+      filter: 'popularcomingsoon', 
+      json: '1', 
+      count: count.toString(),
+      l: 'english',
+      cc: 'PL'
+    })
+
+    if (response && response.items && Array.isArray(response.items)) {
+      const appIds: number[] = response.items.map((item: any) => {
+        const logoUrl = item.logo || ''
+        // Ekstrakcja AppID z URL logotypu: .../apps/APPID/...
+        // Przykład: https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/3411970/89ef...
+        const match = logoUrl.match(/\/apps\/(\d+)\//)
+        return match ? parseInt(match[1]) : null
+      }).filter((id: number | null): id is number => id !== null)
+
+      return appIds
+    }
+
+    return []
+  } catch (e) {
+    console.error(`Błąd podczas pobierania popularnych nadchodzących premier:`, e)
     return []
   }
 }

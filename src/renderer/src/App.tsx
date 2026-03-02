@@ -17,6 +17,7 @@ import { GameFilterSearchView } from './components/games/GameFilterSearchView'
 import { GamesPriceTieredView } from './components/games/GamesPriceTieredView'
 import { GamesProfileAnalyzer } from './components/games/GamesProfileAnalyzer'
 import { GameRecommendationsView } from './components/games/GameRecommendationsView'
+import { GamesCalendarView } from './components/games/GamesCalendarView'
 import './assets/index.css'
 
 // Force TS server refresh
@@ -72,6 +73,7 @@ function App(): React.JSX.Element {
           <Route path="/games/genres" element={<GameGenresView />} />
           <Route path="/games/filter-search" element={<GameFilterSearchView />} />
           <Route path="/games/new" element={<GamesPriceTieredView title="Nowości na Steam" categoryType="new" />} />
+          <Route path="/games/calendar" element={<GamesCalendarView />} />
           <Route path="/games/profile-analyzer" element={<GamesProfileAnalyzer />} />
           <Route path="/games/recommendations" element={<GameRecommendationsView />} />
           {/* Dynamic route must be last in the /games group */}
