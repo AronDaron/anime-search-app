@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: anime-search-app
+productName: "Neo Search"
 directories:
   buildResources: build
 files:
@@ -14,7 +14,7 @@ asarUnpack:
 win:
   target:
     - zip
-  executableName: anime-search-app
+  executableName: "Neo-Search"
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
