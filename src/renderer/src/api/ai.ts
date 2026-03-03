@@ -287,10 +287,8 @@ export const fetchAIReviewSummary = async (
                 You must reply ONLY with a JSON object containing three keys:
                 1. 'playIf': an array of 3-5 strings (in Polish). Short bullet points about who will enjoy this game and what its strongest points are (e.g. "Zagraj, jeśli lubisz głęboką fabułę").
                 2. 'avoidIf': an array of 3-5 strings (in Polish). Short bullet points about who will hate this game and what its biggest flaws are (e.g. "Unikaj, jeśli nie tolerujesz powtarzalnego grindu").
-                3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers, HEAVILY PERSONALIZED based on the provided Gamer DNA (if available).
+                ${gamerDNA ? "3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers, HEAVILY PERSONALIZED based on the provided Gamer DNA. Make sure the verdict starts with something like 'Biorąc pod uwagę Twój gust...' or similar personal touch." : "3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers."}
                 
-                If gamerDNA was provided, make sure the verdict starts with something like "Biorąc pod uwagę Twój gust..." or similar personal touch.
-
                 Do not include any other text, markdown blocks, or explanations. ONLY the raw JSON object.`
       },
       {

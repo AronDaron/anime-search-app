@@ -1030,7 +1030,7 @@ export const AnimeDetails: React.FC = () => {
                     borderColor: 'rgba(191,0,255,0.3)'
                   }}
                 >
-                  <div className="neon-spinner purple" style={{ margin: '0 0 1rem 0' }}></div>
+                  <div className="neon-spinner purple" style={{ margin: '0 auto 1rem auto' }}></div>
                   <h4 style={{ color: 'var(--neon-purple)', margin: '0 0 0.5rem 0' }}>
                     AI analizuje recenzje...
                   </h4>
