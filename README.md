@@ -18,7 +18,7 @@ Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 
 - **Steam API & SteamSpy:** Świeże i dokładne metadane o grach PC, asynchroniczna integracja statystyk CCU (Aktywni Gracze w tym momencie) i list bestsellerów.
 - **AniList GraphQL API:** Serce sekcji anime odpytywane autorskimi kwerendami dociągającymi m.in logikę Sezonów, Relacji (Franchise/Prequel/Sequel), Obsady czy Dat.
-- **OpenRouter (AI Assistant):** Moduł potężnego asystenta wykorzystujący m.in. model `gemini-2.5-flash-free` do inteligentnego przetwarzania fabuły, analizy bibliotek z grami, rerankingu hitów oraz tworzenia podsumowań recenzji w pigułce z użyciem wymuszonych schematów JSON.
+- **OpenRouter (AI Assistant):** Moduł potężnego asystenta wykorzystujący m.in. model `google/gemini-3.1-pro-preview` i `google/gemini-3-flash-preview` do inteligentnego przetwarzania fabuły, analizy bibliotek z grami, rerankingu hitów oraz tworzenia podsumowań recenzji w pigułce z użyciem wymuszonych schematów JSON.
 - **Jikan API (MyAnimeList):** Asynchroniczna integracja ze scraperami MAL załadowana paginacyjnymi podzbiórkami, docelowo dostarczająca autentyczne oceny per odcinek.
 
 ## ✨ Główne Funkcje (Feature list)
@@ -54,6 +54,9 @@ $ npm run dev
 ### Budowanie Edycji Produkcyjnej (Deploy)
 
 Aplikacja ma restrykcyjnie włączoną ochronę `sandbox: true` i pakuje się jako zamknięty, nietykalny plik wykonywalny ze wbudowanym oknem Chromium. Omija on weryfikacje CORS przeglądarek przy strzałach na serwery zewnętrze.
+
+> **Uwaga dotycząca prywatności i danych:** Po pierwszym uruchomieniu zbudowanej aplikacji, system operacyjny automatycznie wygeneruje lokalny folder z prywatnymi danymi użytkownika (historia wyszukiwań, ulubione pozycje, klucze API oraz lokalna baza SQLite). 
+> Domyślna lokalizacja plików na systemie Windows to: `%APPDATA%\anime-search-app` (np. `C:\Users\[Twój_User]\AppData\Roaming\anime-search-app`).
 
 ```bash
 # Budowanie Instalatora oraz .exe (Windows)
