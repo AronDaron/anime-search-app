@@ -4,7 +4,7 @@ Nowoczesna aplikacja desktopowa (Electron) oraz webowa (Vite) służąca jako za
 
 Głównym założeniem projektu jest stworzenie szybkiego, zjawiskowego centrum eksploracji rozrywki, dając możliwość m.in błyskawicznego podglądu informacji, generowania opinii, zaawansowanego podpowiadania tytułów za pomocą modelu językowego oraz asystenta rekomendującego pozycje pod unikalne DNA Gracza.
 
-## � Zrzuty Ekranu
+## Zrzuty Ekranu
 
 ### Sekcja Anime
 
@@ -26,10 +26,7 @@ Głównym założeniem projektu jest stworzenie szybkiego, zjawiskowego centrum 
 | **Profil Gracza (Roast/DNA)** | ![Profil gracza](screenshots/gamer-profile.png) |
 | **Wyszukiwanie AI Gier** | ![AI Search gier](screenshots/ai-search-games.png) |
 
-> [!NOTE]
-> Aby dodać zrzuty ekranu, utwórz folder `screenshots/` w katalogu głównym projektu i umieść w nim pliki `.png` o nazwach podanych powyżej.
-
-## �🚀 Technologie
+## 🚀 Technologie
 
 Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 
