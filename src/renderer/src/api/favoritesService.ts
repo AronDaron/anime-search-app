@@ -13,7 +13,9 @@ interface FavoriteAnime {
   status: string
   score: number
   progress: number
-  genres: string[] // Added genres field
+  genres: string[]
+  totalEpisodes: number // Added
+  description: string // Added
   addedAt: string
 }
 
@@ -38,11 +40,20 @@ function saveLocalFavorites(favs: FavoriteAnime[]): void {
 const isElectron = (): boolean => !!(window as any).api?.db
 
 export const FavoritesService = {
-  async addFavorite(anime: { id: number; title: string; coverImage: string; genres: string[] }): Promise<void> {
+  async addFavorite(anime: { 
+    id: number; 
+    title: string; 
+    coverImage: string; 
+    genres: string[];
+    totalEpisodes?: number;
+    description?: string;
+  }): Promise<void> {
     if (isElectron()) {
       await (window as any).api.db.addFavorite({
         ...anime,
-        genres: JSON.stringify(anime.genres)
+        genres: JSON.stringify(anime.genres),
+        total_episodes: anime.totalEpisodes || 0,
+        description: anime.description || ''
       })
     } else {
       const favs = getLocalFavorites()
@@ -52,6 +63,8 @@ export const FavoritesService = {
           status: 'PLANNING',
           score: 0,
           progress: 0,
+          totalEpisodes: anime.totalEpisodes || 0,
+          description: anime.description || '',
           addedAt: new Date().toISOString()
         })
         saveLocalFavorites(favs)
@@ -73,7 +86,9 @@ export const FavoritesService = {
       const data = await (window as any).api.db.getFavorites()
       return data.map((fav: any) => ({
         ...fav,
-        genres: fav.genres ? JSON.parse(fav.genres) : []
+        genres: fav.genres ? JSON.parse(fav.genres) : [],
+        totalEpisodes: fav.total_episodes || 0,
+        description: fav.description || ''
       }))
     } else {
       return getLocalFavorites()

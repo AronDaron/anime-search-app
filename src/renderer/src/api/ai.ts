@@ -698,3 +698,85 @@ export const generateGamerDNA = async (
     throw e
   }
 }
+
+export const analyzeAnimeProfile = async (
+  favorites: { 
+    title: string; 
+    genres: string[]; 
+    description: string; 
+    score: number; 
+    status: string; 
+    progress: number; 
+    totalEpisodes: number 
+  }[],
+  apiKey: string
+): Promise<AIProfileAnalysis> => {
+  if (!apiKey) {
+    throw new Error('Brak klucza API OpenRouter.')
+  }
+
+  const animeListText = favorites
+    .map((f, i) => {
+      const progressText = f.totalEpisodes > 0 ? `${f.progress}/${f.totalEpisodes}` : `${f.progress}`;
+      return `${i + 1}. ${f.title}
+   - Status: ${f.status}
+   - Ocena: ${f.score}/10
+   - Postęp: ${progressText} odc.
+   - Gatunki: ${f.genres.join(', ')}
+   - Opis: ${f.description?.substring(0, 300)}...`
+    })
+    .join('\n\n')
+
+  const systemPrompt = `Jesteś ekspertem od anime i psychologii mediów. Twoim zadaniem jest przeanalizowanie profilu fana anime na podstawie jego "Mojej Listy".
+  
+  Otrzymasz listę anime wraz z ocenami, statusami oglądania, postępem i krótkimi opisami fabuły.
+  
+  Przeanalizuj te dane i odpowiedz WYŁĄCZNIE w formacie JSON:
+  1. 'title': Wymyśl kreatywny tytuł typu fana (np. "Koneser Seinenów", "Nostalgiczny Wojownik", "Łowca Emocji").
+  2. 'content': W 3-4 akapitach (używając Markdown) przeanalizuj gust użytkownika. 
+     - Co te anime mówią o jego potrzebach emocjonalnych?
+     - Jakie motywy (mechanizmy fabularne) kocha, a jakie być może omija?
+     - Zwróć uwagę na to, które serie porzucił (status DROPPED) lub wstrzymał (PAUSED) - co to o nim mówi?
+     - Bądź błyskotliwy, nieco "geekowski", ale profesjonalny.
+  3. 'verdictTag': Krótki tag podsumowujący (np. "Stabilny Emocjonalnie", "Szukający Przygód").
+  
+  Odpowiadaj w języku polskim. Jeśli dostaniesz opisy w innym języku, przetłumacz sobie ich sens w głowie, ale analizę napisz po polsku.
+  ZACHOWAJ CZYSTY JSON.`
+
+  const payload = {
+    model: 'google/gemini-3.1-pro-preview', // Szybki i nowoczesny model
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: `Oto moja lista ulubionych anime:\n\n${animeListText}`
+      }
+    ]
+  }
+
+  try {
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API Error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content
+    return parseAIJsonResponse(content) as AIProfileAnalysis
+  } catch (e) {
+    console.error('analyzeAnimeProfile error:', e)
+    throw e
+  }
+}

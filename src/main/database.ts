@@ -60,11 +60,28 @@ try {
   if (!e.message.includes('duplicate column name')) console.error(e)
 }
 
-export const addFavorite = (anime: { id: number; title: string; coverImage: string; genres?: string }) => {
-  // Use INSERT OR IGNORE to not overwrite existing statuses/scores if the anime is already in favs
-  // If we want to allow updating coverImage/title, we could use INSERT ... ON CONFLICT(id) DO UPDATE ...
+try {
+  db.exec(`ALTER TABLE favorites ADD COLUMN total_episodes INTEGER DEFAULT 0`)
+} catch (e: any) {
+  if (!e.message.includes('duplicate column name')) console.error(e)
+}
+
+try {
+  db.exec(`ALTER TABLE favorites ADD COLUMN description TEXT`)
+} catch (e: any) {
+  if (!e.message.includes('duplicate column name')) console.error(e)
+}
+
+export const addFavorite = (anime: { 
+  id: number; 
+  title: string; 
+  coverImage: string; 
+  genres?: string;
+  total_episodes?: number;
+  description?: string;
+}) => {
   const stmt = db.prepare(
-    "INSERT OR IGNORE INTO favorites (id, title, coverImage, status, score, progress, genres) VALUES (@id, @title, @coverImage, 'PLANNING', 0, 0, @genres)"
+    "INSERT OR IGNORE INTO favorites (id, title, coverImage, status, score, progress, genres, total_episodes, description) VALUES (@id, @title, @coverImage, 'PLANNING', 0, 0, @genres, @total_episodes, @description)"
   )
   return stmt.run(anime)
 }

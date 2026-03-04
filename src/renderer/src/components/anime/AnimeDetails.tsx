@@ -282,7 +282,9 @@ export const AnimeDetails: React.FC = () => {
           id: anime.id,
           title: anime.title.english || anime.title.romaji,
           coverImage: anime.coverImage.extraLarge || anime.coverImage.large || '',
-          genres: anime.genres || []
+          genres: anime.genres || [],
+          totalEpisodes: anime.episodes || 0,
+          description: anime.description || ''
         })
         setIsFavorite(true)
       }
