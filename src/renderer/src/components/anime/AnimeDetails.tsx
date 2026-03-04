@@ -281,7 +281,8 @@ export const AnimeDetails: React.FC = () => {
         await FavoritesService.addFavorite({
           id: anime.id,
           title: anime.title.english || anime.title.romaji,
-          coverImage: anime.coverImage.extraLarge || anime.coverImage.large || ''
+          coverImage: anime.coverImage.extraLarge || anime.coverImage.large || '',
+          genres: anime.genres || []
         })
         setIsFavorite(true)
       }

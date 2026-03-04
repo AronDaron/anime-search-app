@@ -13,13 +13,19 @@ interface FavoriteAnime {
   status: string
   score: number
   progress: number
+  genres: string[] // Added genres field
   addedAt: string
 }
 
 function getLocalFavorites(): FavoriteAnime[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const favs = raw ? JSON.parse(raw) : []
+    // Ensure genres exist for old data
+    return favs.map((f: any) => ({
+      ...f,
+      genres: Array.isArray(f.genres) ? f.genres : (typeof f.genres === 'string' ? JSON.parse(f.genres) : [])
+    }))
   } catch {
     return []
   }
@@ -32,9 +38,12 @@ function saveLocalFavorites(favs: FavoriteAnime[]): void {
 const isElectron = (): boolean => !!(window as any).api?.db
 
 export const FavoritesService = {
-  async addFavorite(anime: { id: number; title: string; coverImage: string }): Promise<void> {
+  async addFavorite(anime: { id: number; title: string; coverImage: string; genres: string[] }): Promise<void> {
     if (isElectron()) {
-      await (window as any).api.db.addFavorite(anime)
+      await (window as any).api.db.addFavorite({
+        ...anime,
+        genres: JSON.stringify(anime.genres)
+      })
     } else {
       const favs = getLocalFavorites()
       if (!favs.some((f) => f.id === anime.id)) {
@@ -61,7 +70,11 @@ export const FavoritesService = {
 
   async getFavorites(): Promise<FavoriteAnime[]> {
     if (isElectron()) {
-      return await (window as any).api.db.getFavorites()
+      const data = await (window as any).api.db.getFavorites()
+      return data.map((fav: any) => ({
+        ...fav,
+        genres: fav.genres ? JSON.parse(fav.genres) : []
+      }))
     } else {
       return getLocalFavorites()
     }

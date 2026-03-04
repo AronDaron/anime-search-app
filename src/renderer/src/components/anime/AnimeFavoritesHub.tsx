@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Heart, Save, Check, Plus, Minus, Trash2 } from 'lucide-react'
 import { FavoritesService } from '../../api/favoritesService'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts'
 import './AnimeFavoritesHub.css'
 
 interface FavoriteAnime {
@@ -12,6 +12,7 @@ interface FavoriteAnime {
     status: string
     score: number | null
     progress: number | null
+    genres: string[] // Added genres field
     addedAt: string
 }
 
@@ -22,6 +23,30 @@ const statusOptions = [
     { value: 'PAUSED', label: 'Wstrzymane', color: '#ffb300' },
     { value: 'DROPPED', label: 'Porzucone', color: '#ff007f' }
 ]
+
+const apiToPolishGenre = (genre: string): string => {
+    const map: Record<string, string> = {
+        Action: 'Akcja',
+        Adventure: 'Przygoda',
+        Comedy: 'Komedia',
+        Drama: 'Dramat',
+        Ecchi: 'Ecchi',
+        Fantasy: 'Fantasy',
+        Horror: 'Horror',
+        'Mahou Shoujo': 'Magiczne Dziewczyny',
+        Mecha: 'Mecha',
+        Music: 'Muzyczne',
+        Mystery: 'Tajemnica',
+        Psychological: 'Psychologiczne',
+        Romance: 'Romans',
+        'Sci-Fi': 'Sci-Fi',
+        'Slice of Life': 'Okruchy Życia',
+        Sports: 'Sportowe',
+        Supernatural: 'Nadprzyrodzone',
+        Thriller: 'Thriller'
+    }
+    return map[genre] || genre
+}
 
 export const AnimeFavoritesHub: React.FC = () => {
     const navigate = useNavigate()
@@ -105,6 +130,26 @@ export const AnimeFavoritesHub: React.FC = () => {
         count: favorites.filter(f => Math.round(f.score || 0) === s).length
     }))
 
+    const genreCounts = favorites.reduce((acc, fav) => {
+        if (fav.genres && Array.isArray(fav.genres)) {
+            fav.genres.forEach(genre => {
+                const translated = apiToPolishGenre(genre)
+                acc[translated] = (acc[translated] || 0) + 1
+            })
+        }
+        return acc
+    }, {} as Record<string, number>)
+
+    const genreData = Object.entries(genreCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10) // Pokaż top 10 gatunków
+
+    const genreColors = [
+        '#00e5ff', '#bf00ff', '#ff007f', '#4caf50', '#ffb300',
+        '#ff5722', '#2196f3', '#9c27b0', '#e91e63', '#009688'
+    ]
+
     if (loading) {
         return (
             <div className="loading-container" style={{ minHeight: '100vh' }}>
@@ -155,6 +200,53 @@ export const AnimeFavoritesHub: React.FC = () => {
                                                 color: '#fff'
                                             }}
                                             itemStyle={{ color: '#fff' }}
+                                        />
+                                        <Legend
+                                            iconSize={10}
+                                            iconType="circle"
+                                            wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        <div className="hub-chart-panel glass-panel">
+                            <h3>Twoje Gatunki</h3>
+                            <div className="chart-container-small">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={genreData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={35}
+                                            outerRadius={50}
+                                            stroke="none"
+                                            paddingAngle={4}
+                                        >
+                                            {genreData.map((_, index) => (
+                                                <Cell key={`cell-genre-${index}`} fill={genreColors[index % genreColors.length]} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip
+                                            contentStyle={{
+                                                backgroundColor: 'rgba(20, 20, 30, 0.95)',
+                                                border: '1px solid rgba(191, 0, 255, 0.3)',
+                                                borderRadius: '8px',
+                                                color: '#fff'
+                                            }}
+                                            itemStyle={{ color: '#fff' }}
+                                        />
+                                        <Legend
+                                            iconSize={10}
+                                            iconType="circle"
+                                            wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                            layout="horizontal"
+                                            verticalAlign="bottom"
+                                            align="center"
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
