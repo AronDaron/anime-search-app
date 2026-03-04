@@ -8,6 +8,7 @@ import {
 } from '../../api/anilist'
 import { translateDescriptionToPolish, summarizeReviews, AIAnimeReviewSummary } from '../../api/ai'
 import { ApiKeyService } from '../../api/apiKeyService'
+import { FavoritesService } from '../../api/favoritesService'
 import {
   Sparkles,
   MessageSquare,
@@ -263,24 +264,21 @@ export const AnimeDetails: React.FC = () => {
     }
     fetchDetails()
 
-    if (id && window.api?.db) {
-      window.api.db
-        .getFavorites()
-        .then((favs) => {
-          setIsFavorite(favs.some((f: any) => f.id === parseInt(id, 10)))
-        })
+    if (id) {
+      FavoritesService.isFavorite(parseInt(id, 10))
+        .then((result) => setIsFavorite(result))
         .catch(console.error)
     }
   }, [id])
 
   const toggleFavorite = async () => {
-    if (!anime || !window.api?.db) return
+    if (!anime) return
     try {
       if (isFavorite) {
-        await window.api.db.removeFavorite(anime.id)
+        await FavoritesService.removeFavorite(anime.id)
         setIsFavorite(false)
       } else {
-        await window.api.db.addFavorite({
+        await FavoritesService.addFavorite({
           id: anime.id,
           title: anime.title.english || anime.title.romaji,
           coverImage: anime.coverImage.extraLarge || anime.coverImage.large || ''
@@ -288,7 +286,7 @@ export const AnimeDetails: React.FC = () => {
         setIsFavorite(true)
       }
     } catch (error) {
-      console.error('Failed to toggle favorite', error)
+      console.error('Failed to toggle favorite:', error)
     }
   }
 

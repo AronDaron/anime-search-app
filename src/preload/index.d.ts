@@ -8,6 +8,12 @@ declare global {
         addFavorite: (anime: { id: number; title: string; coverImage: string }) => Promise<any>
         removeFavorite: (id: number) => Promise<any>
         getFavorites: () => Promise<any[]>
+        updateFavoriteDetails: (
+          id: number,
+          status: string,
+          score: number,
+          progress: number
+        ) => Promise<any>
         addHistory: (query: string) => Promise<any>
         getHistory: () => Promise<any[]>
         addTranslation: (animeId: number, desc: string) => Promise<any>

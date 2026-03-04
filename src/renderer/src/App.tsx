@@ -9,6 +9,7 @@ import { GenresView } from './components/anime/GenresView'
 import { SeasonsView } from './components/anime/SeasonsView'
 import { FilterSearchView } from './components/anime/FilterSearchView'
 import { AISearchView } from './views/AISearchView'
+import { AnimeFavoritesHub } from './components/anime/AnimeFavoritesHub'
 import { GamesHome } from './components/games/GamesHome'
 import { GameDetails } from './components/games/GameDetails'
 import { GameGenresView } from './components/games/GameGenresView'
@@ -21,7 +22,7 @@ import { GamesCalendarView } from './components/games/GamesCalendarView'
 import { SettingsModal } from './components/shared/SettingsModal'
 import './assets/index.css'
 
-// Force TS server refresh
+// Force TS server refresh 2
 
 function App(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
@@ -60,6 +61,7 @@ function App(): React.JSX.Element {
           <Route path="/anime/seasons" element={<SeasonsView />} />
           <Route path="/anime/filter-search" element={<FilterSearchView />} />
           <Route path="/anime/ai-search" element={<AISearchView domain="anime" />} />
+          <Route path="/anime/favorites" element={<AnimeFavoritesHub />} />
 
           <Route
             path="/games"

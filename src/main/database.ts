@@ -10,6 +10,9 @@ db.exec(`
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
     coverImage TEXT NOT NULL,
+    status TEXT DEFAULT 'PLANNING',
+    score INTEGER DEFAULT 0,
+    progress INTEGER DEFAULT 0,
     addedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -31,9 +34,31 @@ db.exec(`
   );
 `)
 
+// Safe schema migrations for older local databases
+try {
+  db.exec(`ALTER TABLE favorites ADD COLUMN status TEXT DEFAULT 'PLANNING'`)
+} catch (e: any) {
+  // Ignore if column exists 
+  if (!e.message.includes('duplicate column name')) console.error(e)
+}
+
+try {
+  db.exec(`ALTER TABLE favorites ADD COLUMN score INTEGER DEFAULT 0`)
+} catch (e: any) {
+  if (!e.message.includes('duplicate column name')) console.error(e)
+}
+
+try {
+  db.exec(`ALTER TABLE favorites ADD COLUMN progress INTEGER DEFAULT 0`)
+} catch (e: any) {
+  if (!e.message.includes('duplicate column name')) console.error(e)
+}
+
 export const addFavorite = (anime: { id: number; title: string; coverImage: string }) => {
+  // Use INSERT OR IGNORE to not overwrite existing statuses/scores if the anime is already in favs
+  // If we want to allow updating coverImage/title, we could use INSERT ... ON CONFLICT(id) DO UPDATE ...
   const stmt = db.prepare(
-    'INSERT OR REPLACE INTO favorites (id, title, coverImage) VALUES (@id, @title, @coverImage)'
+    "INSERT OR IGNORE INTO favorites (id, title, coverImage, status, score, progress) VALUES (@id, @title, @coverImage, 'PLANNING', 0, 0)"
   )
   return stmt.run(anime)
 }
@@ -46,6 +71,18 @@ export const removeFavorite = (id: number) => {
 export const getFavorites = () => {
   const stmt = db.prepare('SELECT * FROM favorites ORDER BY addedAt DESC')
   return stmt.all()
+}
+
+export const updateFavoriteDetails = (
+  id: number,
+  status: string,
+  score: number,
+  progress: number
+) => {
+  const stmt = db.prepare(
+    'UPDATE favorites SET status = ?, score = ?, progress = ? WHERE id = ?'
+  )
+  return stmt.run(status, score, progress, id)
 }
 
 export const addHistory = (query: string) => {

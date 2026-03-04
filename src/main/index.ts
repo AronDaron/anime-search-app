@@ -12,7 +12,8 @@ import {
   addTranslation,
   getTranslation,
   addReviewSummary,
-  getReviewSummary
+  getReviewSummary,
+  updateFavoriteDetails
 } from './database'
 
 function createWindow(): void {
@@ -72,9 +73,19 @@ app.whenReady().then(() => {
 
   try {
     // Database IPC Handlers
-    ipcMain.handle('db:addFavorite', (_, anime) => addFavorite(anime))
+    ipcMain.handle('db:addFavorite', (_, anime) => {
+      try {
+        return addFavorite(anime)
+      } catch (err) {
+        console.error('Error in db:addFavorite:', err)
+        throw err
+      }
+    })
     ipcMain.handle('db:removeFavorite', (_, id) => removeFavorite(id))
     ipcMain.handle('db:getFavorites', () => getFavorites())
+    ipcMain.handle('db:updateFavoriteDetails', (_, id, status, score, progress) => {
+      return updateFavoriteDetails(id, status, score, progress)
+    })
     ipcMain.handle('db:addHistory', (_, query) => addHistory(query))
     ipcMain.handle('db:getHistory', () => getHistory())
     ipcMain.handle('db:addTranslation', (_, animeId, desc) => addTranslation(animeId, desc))

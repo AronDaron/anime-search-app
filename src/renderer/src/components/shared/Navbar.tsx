@@ -1,5 +1,4 @@
-import * as React from 'react'
-import { Search as SearchIcon, Sparkles, Settings } from 'lucide-react'
+import { Search as SearchIcon, Sparkles, Settings, Heart } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './Navbar.css'
 
@@ -121,6 +120,14 @@ export const Navbar: React.FC<NavbarProps> = ({ searchQuery, setSearchQuery, isA
                 onClick={() => navigate('/anime/seasons')}
               >
                 Sezony
+              </button>
+              <button
+                className={`nav-btn nav-btn-favorites ${path === '/anime/favorites' ? 'active' : ''}`}
+                onClick={() => navigate('/anime/favorites')}
+                title="Moja Lista"
+              >
+                <Heart size={16} style={{ marginRight: '6px', marginBottom: '-3px' }} />
+                Moja Lista
               </button>
             </>
           ) : (

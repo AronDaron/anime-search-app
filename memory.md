@@ -41,6 +41,9 @@ Elektron ze względów bezpieczeństwa zamyka okno Reacta tak, by nie mogło ono
 
 Miejsce gdzie znajdują się absolutnie wszystkie pliki wyświetlane użytkownikowi przez interfejs (UI).
 
+#### Nowy Serwis Fallbacku (`src/renderer/src/api/favoritesService.ts`)
+- `favoritesService.ts` [NOWE]: Zunifikowany menedżer zapisywania i odczytywania anime z "Ulubionych". Dynamicznie przełącza się między dostępnym tylko w Electronie mostem `window.api.db` (do lokalnego SQLite) a wbudowanym w przeglądarkę `localStorage` (dla trybu `dev:web`). Zapewnia spójność logiki w obu środowiskach.
+
 #### Pliki Konfiguracyjne
 
 - `index.html`: Główny korzeń wyświetlania Reactowego `<div id="root"></div>`. Zawiera polityki bezpieczeństwa (CSP) tagu meta, który został ręcznie załagodzony o łączność REST do zewnętrznych serwerów (odblokowanie Jikan API opcją `connect-src 'self' https:`), co pozwala omijać cięcia CORS-owe zapobiegające powstawaniu ocen odcinków.
@@ -81,6 +84,7 @@ Miejsce gdzie znajdują się absolutnie wszystkie pliki wyświetlane użytkownik
 - `FilterSearchView.tsx` / `FilterSearchView.css`: Główny, zaawansowany panel filtra ("Wyszukiwanie"). Posiada boczny pasek opcji pozwalający łączyć dziesiątki gatunków, sezony i lata emisji w jedno konkretne żądanie do bazy `searchAnime()` obsługiwane bez udziału AI.
 - `GenresView.tsx`: Pełnoprawna strona służąca do przeglądania anime na podstawie tagów z gatunkami.
 - `SeasonsView.tsx`: Strona zorientowana na wydania ramówkowe anime wg pór roku.
+- `AnimeFavoritesHub.tsx` / `AnimeFavoritesHub.css` [NOWE]: Rozbudowany panel "Moja Lista Anime". Pozwala przeglądać zapisane tytuły, edytować ich status (Planowane, Oglądane, Porzucone itp.), przypisywać własne oceny od 1-10 oraz śledzić obejrzane odcinki. Wykorzystuje zaawansowany interfejs Recharts do generowania u góry dashboardu analitycznego (wykres kołowy statusów i słupkowy rozkład ocen) w stylistyce neonowego fioletu. Używa customowych kontrolek `+/-` zamiast standardowych przeglądarkowych inputów.
 - `AnimeDetails.tsx` / `AnimeDetails.css`: Główne "centrum opowieści". Ekran oparty na nowej generacji Zakładek (Tabs): **Informacje, Odcinki, Bohaterowie, Statystyki** oraz specjalnej świecącej na fioletowo sekcji **Opinie AI**. Ta ostatnia wykorzystuje ustrukturyzowany format JSON (Werdykt, Zalety, Wady) wizualnie spójny z sekcją gier. Zawiera także Grid Aktorów Głosowych (Seiyuu), logikę linkowania polskich portali strumieniujących (`Slug_Title`) oraz listę sezonów relacyjnych. **Sekcja "Statystyki" oparta jest na inteligentnym, kaskadowym układzie Bento Box z integrowanymi wykresami analitycznymi dostarczanymi graficznie przez bibliotekę zależną `recharts`. Pasek akcji górnych (`anime-top-bar`) posiada priorytet `z-index: 40`, co pozwala mu chować się pod głównym paskiem nawigacji podczas przewijania.**
 
 #### Komponenty Modułu Gier Steam (`src/renderer/src/components/games/`)
