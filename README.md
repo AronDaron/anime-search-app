@@ -4,7 +4,32 @@ Nowoczesna aplikacja desktopowa (Electron) oraz webowa (Vite) służąca jako za
 
 Głównym założeniem projektu jest stworzenie szybkiego, zjawiskowego centrum eksploracji rozrywki, dając możliwość m.in błyskawicznego podglądu informacji, generowania opinii, zaawansowanego podpowiadania tytułów za pomocą modelu językowego oraz asystenta rekomendującego pozycje pod unikalne DNA Gracza.
 
-## 🚀 Technologie
+## � Zrzuty Ekranu
+
+### Sekcja Anime
+
+| Widok | Podgląd |
+|---|---|
+| **Strona Główna Anime** | ![Strona główna](screenshots/anime-home.png) |
+| **Szczegóły Anime (Bento Box)** | ![Szczegóły anime](screenshots/anime-details.png) |
+| **Moja Lista + Analiza AI** | ![Moja Lista](screenshots/anime-favorites-hub.png) |
+| **Wyszukiwanie AI** | ![AI Search](screenshots/ai-search-anime.png) |
+| **Filtrowanie i Gatunki** | ![Filtry](screenshots/anime-filter.png) |
+
+### Sekcja Gier
+
+| Widok | Podgląd |
+|---|---|
+| **Strona Główna Gier** | ![Strona główna gier](screenshots/games-home.png) |
+| **Szczegóły Gry (Bento)** | ![Szczegóły gry](screenshots/game-details.png) |
+| **Rekomendacje AI** | ![Rekomendacje](screenshots/game-recommendations.png) |
+| **Profil Gracza (Roast/DNA)** | ![Profil gracza](screenshots/gamer-profile.png) |
+| **Wyszukiwanie AI Gier** | ![AI Search gier](screenshots/ai-search-games.png) |
+
+> [!NOTE]
+> Aby dodać zrzuty ekranu, utwórz folder `screenshots/` w katalogu głównym projektu i umieść w nim pliki `.png` o nazwach podanych powyżej.
+
+## �🚀 Technologie
 
 Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 
@@ -29,7 +54,49 @@ Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 - **Inteligentny Navbar:** Dynamicznie adaptujący się pasek rozwijany nawigujący pomiędzy przestrzeniami (Neon Anime / Szmaragdowe Gry), animowany zaawansowanym trybem pigułki.
 - **Anime Details (Zakładkowo-Bento-Kartowe):** Zoptymalizowany pod minimalne przewijanie interfejs informacyjny: Informacje, Odcinki, Obsada i Statystyki - ukryte w pięknej szklistej siatce *Bento Box* ze wsparciem interaktywnych analitycznych wykresów.
 
-## 🛠️ Instalacja i Uruchomienie
+## � Klucze API i Konfiguracja
+
+Aplikacja korzysta z zewnętrznych serwisów wymagających kluczy API. Część funkcji działa bez klucza (publiczne endpointy), ale dla pełnego doświadczenia zalecane jest ich skonfigurowanie.
+
+### OpenRouter (Sztuczna Inteligencja) — **Zalecany**
+
+- **Do czego służy:** Wyszukiwanie anime/gier po opisie, generowanie werdyktów AI, tłumaczenie opisów, Analiza Listy (profil fana), Gamer DNA, Roast profilu.
+- **Skąd pobrać:** Zarejestruj się na [openrouter.ai](https://openrouter.ai), przejdź do zakładki **Keys** i wygeneruj nowy klucz.
+- **Gdzie wpisać:** W aplikacji kliknij ikonę ⚙️ (Ustawienia) w prawym górnym rogu Navbara i wklej klucz w pole „OpenRouter API Key".
+- **Koszt:** Dostępne są **darmowe modele** (np. `google/gemini-2.5-flash-free`). Przy korzystaniu z modeli płatnych (np. `gemini-3.1-pro-preview`) opłaty naliczane są per token — szczegóły na stronie OpenRouter.
+
+### Steam Web API Key — **Opcjonalny**
+
+- **Do czego służy:** Skanowanie publicznej biblioteki gracza (Top 50 gier) na potrzeby Gamer DNA, personalizacji werdyktów AI oraz Roastu profilu Steam.
+- **Skąd pobrać:** Zaloguj się na [steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey) i zarejestruj domenę (może być dowolna, np. `localhost`).
+- **Gdzie wpisać:** W ustawieniach aplikacji (⚙️) w polu „Steam API Key".
+
+> [!NOTE]
+> Bez klucza Steam API większość funkcji (wyszukiwanie gier, szczegóły, rekomendacje) działa normalnie — korzystają one z publicznych endpointów Steam Store i SteamSpy. Klucz jest potrzebny wyłącznie do funkcji skanujących **prywatną bibliotekę gracza**.
+
+### AniList API
+
+- Klucz **nie jest wymagany**. AniList GraphQL API jest w pełni publiczne i nie wymaga rejestracji ani tokenu.
+
+---
+
+## ⚠️ Limity Zapytań (Rate Limits)
+
+Przy intensywnym korzystaniu z aplikacji mogą wystąpić tymczasowe blokady ze strony zewnętrznych API. Poniżej znajdują się znane ograniczenia:
+
+| Serwis | Limit | Objaw przekroczenia | Rozwiązanie |
+|---|---|---|---|
+| **AniList GraphQL** | ~90 zapytań / minutę | Błąd HTTP 429 (Too Many Requests) | Odczekaj ~60 sekund. Limit resetuje się automatycznie. |
+| **Jikan (MAL)** | ~3 zapytania / sekundę | Błąd HTTP 429 | Wbudowany mechanizm opóźnień (`delay`) minimalizuje ryzyko. Przy bardzo długich seriach (500+ odc.) ładowanie ocen może trwać dłużej. |
+| **Steam Store API** (publiczne) | ~200 zapytań / 5 minut | Błąd HTTP 429 lub puste odpowiedzi | Limit dotyczy IP. Odczekaj kilka minut. Najczęściej występuje przy masowym ładowaniu szczegółów gier. |
+| **Steam Web API** (z kluczem) | ~100 000 zapytań / dzień | Blokada klucza na 24h | Przy normalnym użytkowaniu limit jest praktycznie nieosiągalny. |
+| **SteamSpy** | ~4 zapytania / sekundę | Puste odpowiedzi lub timeout | Odczekaj kilka sekund między kolejnymi operacjami. |
+| **OpenRouter** (darmowe modele) | Zależy od modelu (~20-50 / minutę) | Błąd 429 lub komunikat o limicie | Odczekaj chwilę lub przejdź na model płatny. Własny klucz API znacząco zwiększa limity. |
+
+> [!TIP]
+> Aplikacja posiada wbudowane mechanizmy **cache'owania** (baza SQLite dla tłumaczeń, recenzji AI i profili) oraz **opóźnień między zapytaniami** (Jikan). Przy normalnym użytkowaniu limity te nie powinny stanowić problemu.
+
+## �🛠️ Instalacja i Uruchomienie
 
 ### Wymagania
 
