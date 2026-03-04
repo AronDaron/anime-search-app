@@ -51,7 +51,7 @@ Projekt zbudowany jest w oparciu o szybkie, wydajne i nowoczesne rozwiązania:
 - **Inteligentny Navbar:** Dynamicznie adaptujący się pasek rozwijany nawigujący pomiędzy przestrzeniami (Neon Anime / Szmaragdowe Gry), animowany zaawansowanym trybem pigułki.
 - **Anime Details (Zakładkowo-Bento-Kartowe):** Zoptymalizowany pod minimalne przewijanie interfejs informacyjny: Informacje, Odcinki, Obsada i Statystyki - ukryte w pięknej szklistej siatce *Bento Box* ze wsparciem interaktywnych analitycznych wykresów.
 
-## � Klucze API i Konfiguracja
+## Klucze API i Konfiguracja
 
 Aplikacja korzysta z zewnętrznych serwisów wymagających kluczy API. Część funkcji działa bez klucza (publiczne endpointy), ale dla pełnego doświadczenia zalecane jest ich skonfigurowanie.
 
@@ -93,7 +93,7 @@ Przy intensywnym korzystaniu z aplikacji mogą wystąpić tymczasowe blokady ze 
 > [!TIP]
 > Aplikacja posiada wbudowane mechanizmy **cache'owania** (baza SQLite dla tłumaczeń, recenzji AI i profili) oraz **opóźnień między zapytaniami** (Jikan). Przy normalnym użytkowaniu limity te nie powinny stanowić problemu.
 
-## �🛠️ Instalacja i Uruchomienie
+## 🛠️ Instalacja i Uruchomienie
 
 ### Wymagania
 
