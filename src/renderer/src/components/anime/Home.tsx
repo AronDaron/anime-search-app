@@ -68,7 +68,7 @@ export const Home: React.FC = () => {
           </h2>
         </div>
 
-        <div className="anime-grid">
+        <div className="anime-grid home-grid">
           {popularAnime.map((anime) => (
             <NeonCard
               key={anime.id}

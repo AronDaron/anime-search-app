@@ -140,7 +140,7 @@ query ($page: Int, $perPage: Int, $search: String, $season: MediaSeason, $season
 }
 `
 
-export const getPopularAnime = async (page = 1, perPage = 20) => {
+export const getPopularAnime = async (page = 1, perPage = 14) => {
   return fetchAniList<PageData>(POPULAR_ANIME_QUERY, { page, perPage })
 }
 

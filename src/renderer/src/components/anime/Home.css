@@ -2,6 +2,8 @@
   display: flex;
   gap: 2rem;
   width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
   min-height: calc(100vh - 80px);
   padding: 1rem;
   box-sizing: border-box;
@@ -16,14 +18,19 @@
 
 /* Kolumna Prawa: Harmonogram Emisji */
 .home-sidebar {
-  width: 380px;
-  min-width: 380px;
+  width: 320px;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
 }
 
 .home-sidebar .view-header {
   margin-bottom: 1.5rem;
+}
+
+.home-grid {
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 1.8rem !important;
 }
 
 .schedule-list {
