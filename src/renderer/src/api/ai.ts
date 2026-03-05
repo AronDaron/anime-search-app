@@ -188,23 +188,24 @@ export const summarizeReviews = async (
   }
 
   const payload = {
-    model: 'google/gemini-3.1-pro-preview',
+    model: 'google/gemini-3-flash-preview',
     response_format: { type: 'json_object' },
     messages: [
       {
         role: 'system',
-        content: `Jesteś ekspertem od anime. Poniżej dostaniesz listę recenzji danego widowiska napisanych przez społeczność fanów po angielsku. 
-                Twoim zadaniem jest stworzenie JEDNEGO spójnego, obiektywnego i krótkiego podsumowania tych opinii w języku polskim w formacie JSON.
+        content: `Jesteś niezwykle wnikliwym ekspertem i krytykiem anime. Poniżej dostaniesz obszerną listę recenzji danego widowiska napisanych przez społeczność po angielsku. 
+                Twoim zadaniem jest stworzenie BARDZO SZCZEGÓŁOWEGO, spójnego i obiektywnego podsumowania nastrojów oraz opinii widzów w języku polskim. Analiza ma być wyczerpująca i profesjonalna. W odpowiedzi zastosuj format JSON.
                 
                 Zasady:
-                - Nie spoiluj fabuły!
+                - Podsumowanie musi być rzeczowe, oddające detale wymieniane przez społeczność i czyta się je jak profesjonalną recenzję redaktora. 
+                - Omawiając zalety i wady, rozpisz się, unikaj rzucania samych krótkich haseł, dodaj odrobinę kontekstu wychwyconego z recenzji.
+                - Stanowczo zabrania się spoilowania ważnych zwrotów akcji!
                 - Odpowiedz WYŁĄCZNIE surowym obiektem JSON o strukturze:
                 {
-                  "verdict": "Krótkie (2-3 zdania) podsumowanie ogólnego konsensusu w języku polskim.",
-                  "pros": ["Tablica 3-5 najważniejszych zalet w języku polskim"],
-                  "cons": ["Tablica 3-5 najważniejszych wad w języku polskim"]
-                }
-                - Jeśli recenzje są bardzo skrajne, napisz w 'verdict', że "zdania są mocno podzielone".`
+                  "verdict": "Obszerne (od 4 do 6 rozbudowanych zdań) podsumowanie ogólnego konsensusu w języku polskim, uwzględniające najważniejsze przemyślenia recenzentów. Rozpisz się na temat ogólnego wrażenia.",
+                  "pros": ["Tablica od 4 do 6 szczegółowo opisanych zalet (po minimum 1 rozbudowanym zdaniu na każdą zaletę)"],
+                  "cons": ["Tablica od 4 do 6 szczegółowo opisanych wad (po minimum 1 rozbudowanym zdaniu na każdą wadę, uwzględniając słabe strony wymieniane w recenzjach)"]
+                }`
       },
       {
         role: 'user',
@@ -274,7 +275,7 @@ export const fetchAIReviewSummary = async (
     : ""
 
   const payload = {
-    model: 'google/gemini-3.1-pro-preview',
+    model: 'google/gemini-3-flash-preview',
     response_format: { type: 'json_object' },
     messages: [
       {
@@ -715,21 +716,61 @@ export const analyzeAnimeProfile = async (
     throw new Error('Brak klucza API OpenRouter.')
   }
 
-  const animeListText = favorites
-    .map((f, i) => {
-      const progressText = f.totalEpisodes > 0 ? `${f.progress}/${f.totalEpisodes}` : `${f.progress}`;
-      return `${i + 1}. ${f.title}
-   - Status: ${f.status}
-   - Ocena: ${f.score}/10
-   - Postęp: ${progressText} odc.
-   - Gatunki: ${f.genres.join(', ')}
-   - Opis: ${f.description?.substring(0, 300)}...`
+  // Grupowanie anime po seriach, aby oszczędzić tokeny
+  const groupedFavorites: Record<string, {
+    baseTitle: string;
+    mainDescription: string;
+    genres: string[];
+    entries: {
+        title: string;
+        score: number;
+        status: string;
+        progress: number;
+        totalEpisodes: number;
+    }[]
+  }> = {};
+
+  favorites.forEach(f => {
+    // Prosta heurystyka wyciągania tytułu bazowego: odrzucamy człony po dwukropku, myślniku, słowie "Season"
+    const baseTitle = f.title.split(':')[0].split('-')[0].split(' Season')[0].split(' Part')[0].toLowerCase().trim()
+    
+    if (!groupedFavorites[baseTitle]) {
+      groupedFavorites[baseTitle] = {
+        baseTitle: f.title, 
+        mainDescription: f.description?.substring(0, 100) || '',
+        genres: f.genres,
+        entries: []
+      }
+    }
+    
+    groupedFavorites[baseTitle].entries.push({
+      title: f.title,
+      score: f.score,
+      status: f.status,
+      progress: f.progress,
+      totalEpisodes: f.totalEpisodes
+    })
+  });
+
+  const animeListText = Object.values(groupedFavorites)
+    // Ograniczenie do max 60 serii, by nie przewymiarować promptu
+    .slice(0, 60)
+    .map((group, i) => {
+      const entriesText = group.entries.map(e => 
+        `    - ${e.title} (Status: ${e.status}, Ocena: ${e.score}/10, Postęp: ${e.totalEpisodes > 0 ? `${e.progress}/${e.totalEpisodes}` : e.progress})`
+      ).join('\n')
+
+      return `${i + 1}. Seria Klastrowa: ${group.baseTitle}
+   - Gatunki: ${group.genres.join(', ')}
+   - Opis wprowadzający: ${group.mainDescription}...
+   - Części serii w kolekcji gracza:
+${entriesText}`
     })
     .join('\n\n')
 
   const systemPrompt = `Jesteś ekspertem od anime i psychologii mediów. Twoim zadaniem jest przeanalizowanie profilu fana anime na podstawie jego "Mojej Listy".
   
-  Otrzymasz listę anime wraz z ocenami, statusami oglądania, postępem i krótkimi opisami fabuły.
+  Otrzymasz listę Seryjną (zgrupowane anime wokół głównych tytułów) wraz z ocenami, statusami oglądania, postępem i bardzo krótkimi opisami wprowadzającymi.
   
   Przeanalizuj te dane i odpowiedz WYŁĄCZNIE w formacie JSON:
   1. 'title': Wymyśl kreatywny tytuł typu fana (np. "Koneser Seinenów", "Nostalgiczny Wojownik", "Łowca Emocji").
@@ -744,7 +785,7 @@ export const analyzeAnimeProfile = async (
   ZACHOWAJ CZYSTY JSON.`
 
   const payload = {
-    model: 'google/gemini-3.1-pro-preview', // Szybki i nowoczesny model
+    model: 'google/gemini-3-flash-preview', // Szybszy i tańszy model
     response_format: { type: 'json_object' },
     messages: [
       {

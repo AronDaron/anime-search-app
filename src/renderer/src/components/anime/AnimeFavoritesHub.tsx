@@ -63,6 +63,15 @@ export const AnimeFavoritesHub: React.FC = () => {
 
     useEffect(() => {
         fetchFavorites()
+
+        const cachedAnalysis = localStorage.getItem('animeAiProfile')
+        if (cachedAnalysis) {
+            try {
+                setAiAnalysis(JSON.parse(cachedAnalysis))
+            } catch (e) {
+                console.error('Failed to parse cached AI profile', e)
+            }
+        }
     }, [])
 
     const fetchFavorites = async () => {
@@ -183,6 +192,7 @@ export const AnimeFavoritesHub: React.FC = () => {
                 apiKey
             );
             setAiAnalysis(analysis);
+            localStorage.setItem('animeAiProfile', JSON.stringify(analysis));
         } catch (error) {
             console.error('Analysis failed', error);
         } finally {

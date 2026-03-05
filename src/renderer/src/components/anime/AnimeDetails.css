@@ -972,6 +972,26 @@
   margin-top: 3px;
 }
 
+.btn-ai-generate {
+  background: rgba(191, 0, 255, 0.15);
+  border-color: rgba(191, 0, 255, 0.4);
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.btn-ai-generate:hover {
+  background: rgba(191, 0, 255, 0.3);
+  box-shadow: 0 0 15px rgba(191, 0, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-ai-generate svg {
+  color: var(--neon-purple);
+}
+
 @media (max-width: 768px) {
   .ai-pros-cons-grid {
     grid-template-columns: 1fr;

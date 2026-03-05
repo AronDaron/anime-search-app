@@ -215,38 +215,6 @@ export const AnimeDetails: React.FC = () => {
 
           if (cachedSummary) {
             setAiReviewSummary(cachedSummary)
-          } else {
-            // Gather reviews text
-            const reviewsText = response.Media.reviews.edges
-              .slice(0, 10) // Take top 10 maximum to not overflow token limits
-              .map((edge) => edge.node.body || edge.node.summary)
-              .filter(Boolean) as string[]
-
-            if (reviewsText.length > 0) {
-              const apiKey = ApiKeyService.getOpenRouterKey() || ''
-              if (apiKey) {
-                setIsSummarizing(true)
-                summarizeReviews(reviewsText, apiKey)
-                  .then(async (summary) => {
-                    if (summary) {
-                      setAiReviewSummary(summary)
-                      // Save to DB Cache
-                      if (window.api && window.api.db) {
-                        try {
-                          await window.api.db.addReviewSummary(
-                            response.Media.id,
-                            JSON.stringify(summary)
-                          )
-                        } catch (err) {
-                          console.error('Failed to save review summary to DB:', err)
-                        }
-                      }
-                    }
-                  })
-                  .catch((err) => console.error('Review summarizing threw an error:', err))
-                  .finally(() => setIsSummarizing(false))
-              }
-            }
           }
         }
 
@@ -290,6 +258,48 @@ export const AnimeDetails: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
+    }
+  }
+
+  const handleGenerateOpinions = async () => {
+    if (!anime || !anime.reviews?.edges || anime.reviews.edges.length === 0) return
+
+    const reviewsText = anime.reviews.edges
+      .slice(0, 15) // Limit to up to 15 best reviews
+      .map((edge) => {
+        const text = edge.node.body || edge.node.summary || '';
+        return text.substring(0, 1000); // Allow up to 1000 characters per review
+      })
+      .filter(Boolean) as string[]
+
+    if (reviewsText.length === 0) return
+
+    const apiKey = ApiKeyService.getOpenRouterKey() || ''
+    if (!apiKey) {
+      alert('Brak klucza API OpenRouter. Dodaj go w ustawieniach.')
+      return
+    }
+
+    setIsSummarizing(true)
+    try {
+      const summary = await summarizeReviews(reviewsText, apiKey)
+      if (summary) {
+        setAiReviewSummary(summary)
+        if (window.api && window.api.db) {
+          try {
+            await window.api.db.addReviewSummary(
+              anime.id,
+              JSON.stringify(summary)
+            )
+          } catch (err) {
+            console.error('Failed to save review summary to DB:', err)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Review summarizing threw an error:', err)
+    } finally {
+      setIsSummarizing(false)
     }
   }
 
@@ -1083,12 +1093,18 @@ export const AnimeDetails: React.FC = () => {
                   </div>
                 </div>
               ) : anime.reviews?.edges && anime.reviews.edges.length > 0 ? (
-                <div className="empty-state-tab glass-panel-inner">
+                <div className="empty-state-tab glass-panel-inner" style={{ textAlign: 'center' }}>
                   <p>
-                    Oczekujące recenzje. Jeśli to widzisz, aplikacja napotkała błąd podczas próby
-                    wygenerowania podsumowania ze strony API OpenRouter (Brak limitów lub
-                    skonfigurowanego klucza).
+                    Kliknij przycisk poniżej, aby przeczytać najciekawsze opinie i werdykty od pozostałych użytkowników:
                   </p>
+                  <button
+                    className="neon-btn btn-ai-generate"
+                    onClick={handleGenerateOpinions}
+                    style={{ marginTop: '1rem', padding: '0.8rem 1.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Sparkles size={18} />
+                    Generuj Opinie AI
+                  </button>
                 </div>
               ) : (
                 <div className="empty-state-tab glass-panel-inner">
