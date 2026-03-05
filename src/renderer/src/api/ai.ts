@@ -280,21 +280,21 @@ export const fetchAIReviewSummary = async (
     messages: [
       {
         role: 'system',
-        content: `You are an expert game critic and AI analyzer. The user will provide you with a raw dump of Steam user reviews for a specific game.
-                Analyze the sentiment, recurring praises, and recurring complaints.
+        content: `Jesteś ekspertem od gier wideo i wnikliwym analitykiem. Użytkownik przekaże surowe dane recenzji ze Steam dla konkretnej gry.
+                Twoim zadaniem jest przeanalizować sentyment, najczęściej wpisywane pochwały oraz główne wady gry na podstawie nadesłanych recenzji.
                 
                 ${personalizationContext}
 
-                You must reply ONLY with a JSON object containing three keys:
-                1. 'playIf': an array of 3-5 strings (in Polish). Short bullet points about who will enjoy this game and what its strongest points are (e.g. "Zagraj, jeśli lubisz głęboką fabułę").
-                2. 'avoidIf': an array of 3-5 strings (in Polish). Short bullet points about who will hate this game and what its biggest flaws are (e.g. "Unikaj, jeśli nie tolerujesz powtarzalnego grindu").
-                ${gamerDNA ? "3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers, HEAVILY PERSONALIZED based on the provided Gamer DNA. Make sure the verdict starts with something like 'Biorąc pod uwagę Twój gust...' or similar personal touch." : "3. 'verdict': A 1-3 sentence summary (in Polish) of the general consensus among the reviewers."}
+                Odpowiedz WYŁĄCZNIE obiektem JSON zawierającym trzy klucze:
+                1. 'playIf': tablica 3-5 elementów tekstowych (po polsku). Krótkie podpunkty informujące kogo gra zachwyci i jakie są jej najmocniejsze strony (np. "Zagraj, jeśli lubisz głęboką fabułę").
+                2. 'avoidIf': tablica 3-5 elementów tekstowych (po polsku). Krótkie podpunkty oznaczające wady gry i komu zdecydowanie nie przypadnie do gustu (np. "Unikaj, jeśli nie tolerujesz powtarzalnego grindu").
+                ${gamerDNA ? "3. 'verdict': Podsumowanie składające się z 2-4 zdań (po polsku) opinii graczy, ZDECYDOWANIE SPERSONALIZOWANE pod kątem dostarczonego profilu Gamer DNA. Upewnij się, że zaczyna się naturalnym wtrąceniem np. 'Biorąc pod uwagę Twój gust...' lub czymś podobnym." : "3. 'verdict': Podsumowanie składające się z 2-4 zdań (po polsku) na podstawie głównego konsensusu z przesłanych recenzji społeczności."}
                 
-                Do not include any other text, markdown blocks, or explanations. ONLY the raw JSON object.`
+                Nie dołączaj żadnych dodatkowych tekstów, formowania Markdown ani wyjaśnień. TYLKO surowy obiekt JSON.`
       },
       {
         role: 'user',
-        content: `Here are the top reviews:\n\n${reviewsText}`
+        content: `Oto opinie użytkowników do przeanalizowania:\n\n${reviewsText}`
       }
     ]
   }
