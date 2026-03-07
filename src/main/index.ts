@@ -116,10 +116,6 @@ app.whenReady().then(() => {
         return await response.json()
       } catch (error: any) {
         console.error('Steam API error:', error.message)
-        dialog.showErrorBox(
-          'Steam API IPC Error', 
-          `Błąd podczas pobierania ze Steama w procesie głównym!\n\nURL: ${url}\nTreść błędu: ${error.message}\nSzczegóły: ${error.stack}`
-        )
         throw error
       }
     })
