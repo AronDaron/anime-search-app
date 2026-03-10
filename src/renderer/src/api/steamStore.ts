@@ -189,8 +189,7 @@ export const getSteamStoreFeaturedCategories = async (): Promise<SteamFeaturedCa
 }
 
 /**
- * Szuka gier wg gatunku. Wykorzystuje nieudokumentowany endpoint wyszukiwarki sklepowej Steam
- * przepuszczony przez fetchSteamData by ominąć cors.
+ * Szuka gier wg gatunku.
  */
 export const searchSteamGamesByGenre = async (
   genre: string
@@ -248,7 +247,6 @@ export const searchSteamGamesByGenre = async (
     return []
   }
 }
-
 /**
  * Pobiera listę popularnych nadchodzących premier bezpośrednio ze Steam Search API.
  */

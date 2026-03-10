@@ -18,64 +18,140 @@ const GAME_GENRES = [
     { label: 'Wszystkie', id: 'All' },
     ...ALL_GENRES
 ]
-
-const INITIAL_LOAD_COUNT = 20
-const SCROLL_STEP = 15
-
-// Sub-komponent dla pojedynczej kolumny cenowej z własnym Infinite Scroll
+// Sub-komponent dla pojedynczej kolumny cenowej z własnym Infinite Scroll i weryfikacjami API
 const PriceTierColumn: React.FC<{
     title: string
     icon: React.ReactNode
-    games: GameData[]
+    rawCandidates: SteamFeaturedCategoryItem[]
+    categoryType: 'new' | 'deals'
     colorClass: string
     onCardClick: (id: string | number) => void
-}> = ({ title, icon, games, colorClass, onCardClick }) => {
-    const [displayLimit, setDisplayLimit] = useState(INITIAL_LOAD_COUNT)
+}> = ({ title, icon, rawCandidates, categoryType, colorClass, onCardClick }) => {
+    const [games, setGames] = useState<GameData[]>([])
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [currentIndex, setCurrentIndex] = useState(0)
     const loaderRef = useRef<HTMLDivElement>(null)
 
-    // Resetuj limit wyświetlania gdy zmienia się zestaw gier (np. zmiana gatunku)
+    // Reset gdy zmienia się lista kandydatów (np. zmiana filtra)
     useEffect(() => {
-        setDisplayLimit(INITIAL_LOAD_COUNT)
-    }, [games])
+        setGames([])
+        setCurrentIndex(0)
+    }, [rawCandidates])
 
+    // Funkcja pobierająca zaledwie 12 sztuk w locie w celu oszczędzenia limitu 429
+    const loadMoreDeals = useCallback(async () => {
+        if (loadingMore || currentIndex >= rawCandidates.length) return
+
+        setLoadingMore(true)
+        try {
+            const nextBatch = rawCandidates.slice(currentIndex, currentIndex + 12)
+            const idsToCheck = nextBatch.map(c => c.id)
+
+            if (idsToCheck.length === 0) {
+                setLoadingMore(false)
+                return
+            }
+
+            const { getMultipleSteamAppDetails } = await import('../../api/steamStore')
+            const freshSteamData = await getMultipleSteamAppDetails(idsToCheck)
+            const freshMap = new Map<number, any>()
+            freshSteamData.forEach(game => freshMap.set(game.steam_appid, game))
+
+            const newGames: GameData[] = []
+
+            nextBatch.forEach(item => {
+                const liveData = freshMap.get(item.id)
+                let priceInPln = item.final_price ? item.final_price / 100 : 0
+                let originalPriceInPln = item.original_price ? item.original_price / 100 : undefined
+                let discountPercent = item.discount_percent || 0
+
+                if (item.currency === 'USD') {
+                    priceInPln *= 4
+                    if (originalPriceInPln) originalPriceInPln *= 4
+                }
+
+                // Przypięcie NAJŚWIEŻSZEJ wyceny ze Steama załadowanej w paczce 12:
+                if (liveData && liveData.price_overview) {
+                    priceInPln = liveData.price_overview.final / 100
+                    originalPriceInPln = liveData.price_overview.initial / 100
+                    discountPercent = liveData.price_overview.discount_percent
+                }
+
+                // Filtrowanie jeżeli to widok Promocji i obniżka realnie przestała na Steamie istnieć!
+                if (categoryType === 'deals' && discountPercent === 0) {
+                    return;
+                }
+
+                newGames.push({
+                    id: item.id.toString(),
+                    title: liveData?.name || item.name || (item as any).title || 'Nieznany Tytuł',
+                    capsuleImage: liveData?.header_image || item.large_capsule_image || item.header_image || '',
+                    price: priceInPln,
+                    originalPrice: originalPriceInPln,
+                    discountPercent: discountPercent,
+                    tags: [],
+                    osWindows: liveData?.platforms?.windows ?? item.windows_available ?? true
+                })
+            })
+
+            // Unikanie duplikatów przy React 18
+            setGames(prev => {
+                const existingIds = new Set(prev.map(g => g.id))
+                const uniqueNewGames = newGames.filter(g => !existingIds.has(g.id))
+                return [...prev, ...uniqueNewGames]
+            })
+            setCurrentIndex(prev => prev + 12)
+        } catch (err) {
+            console.error('Error loading more deals:', err)
+        } finally {
+            setLoadingMore(false)
+        }
+    }, [rawCandidates, currentIndex, loadingMore, categoryType])
+
+    // Pobranie pierwszej paczki dla samej kolumny
     useEffect(() => {
-        if (!loaderRef.current) return
+        if (rawCandidates.length > 0 && games.length === 0 && currentIndex === 0 && !loadingMore) {
+            loadMoreDeals()
+        }
+    }, [rawCandidates, games.length, currentIndex, loadingMore, loadMoreDeals])
+
+    // Mechanizm Lazy Loader obserwujący czy suwak w TIERZE osiągnął koniec i wywołujący max 12 gier
+    useEffect(() => {
+        if (!loaderRef.current || loadingMore) return
 
         const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && displayLimit < games.length) {
-                setDisplayLimit(prev => prev + SCROLL_STEP)
+            if (entries[0].isIntersecting && currentIndex < rawCandidates.length) {
+                loadMoreDeals()
             }
         }, { threshold: 0.1, rootMargin: '100px' })
 
         observer.observe(loaderRef.current)
         return () => observer.disconnect()
-    }, [displayLimit, games.length])
-
-    const visibleGames = games.slice(0, displayLimit)
+    }, [loadMoreDeals, loadingMore, currentIndex, rawCandidates.length])
 
     return (
         <div className={`price-tier-column ${colorClass}`}>
             <div className="tier-header">
                 {icon}
                 <h3>{title}</h3>
-                <span className="tier-count">{games.length}</span>
+                <span className="tier-count">{games.length > 0 ? `${games.length}+` : 0}</span>
             </div>
             <div className="tier-scroll-area">
-                {visibleGames.length > 0 ? (
+                {games.length > 0 ? (
                     <>
-                        {visibleGames.map(game => (
+                        {games.map(game => (
                             <div key={game.id} className="game-card-compact-wrapper">
                                 <GameCard game={game} onClick={() => onCardClick(game.id)} />
                             </div>
                         ))}
-                        {displayLimit < games.length && (
+                        {(currentIndex < rawCandidates.length || loadingMore) && (
                             <div ref={loaderRef} className="tier-loader-sentinel">
                                 <div className="mini-spinner"></div>
                             </div>
                         )}
                     </>
                 ) : (
-                    <div className="empty-tier">Brak gier w tej cenie</div>
+                    !loadingMore && <div className="empty-tier">Brak gier w tej cenie</div>
                 )}
             </div>
         </div>
@@ -85,7 +161,12 @@ const PriceTierColumn: React.FC<{
 export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ title, categoryType }) => {
     const navigate = useNavigate()
     const [selectedGenre, setSelectedGenre] = useState('All')
-    const [games, setGames] = useState<GameData[]>([])
+
+    // Surowe identyfikatory dla każdego tieru oczekujące na dociągnięcie ich cenowych profili po scrollu 12 sztuk
+    const [tier1Candidates, setTier1Candidates] = useState<SteamFeaturedCategoryItem[]>([])
+    const [tier2Candidates, setTier2Candidates] = useState<SteamFeaturedCategoryItem[]>([])
+    const [tier3Candidates, setTier3Candidates] = useState<SteamFeaturedCategoryItem[]>([])
+
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -121,23 +202,30 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
                 if (item && item.id) uniqueMap.set(item.id, item)
             })
 
-            const mappedGames: GameData[] = Array.from(uniqueMap.values()).map(item => {
-                let priceInPln = item.final_price ? item.final_price / 100 : 0
-                if (item.currency === 'USD') priceInPln *= 4
+            const uniqueCandidates = Array.from(uniqueMap.values())
 
-                return {
-                    id: item.id.toString(),
-                    title: item.name || (item as any).title || 'Nieznany Tytuł',
-                    capsuleImage: item.large_capsule_image || item.header_image || '',
-                    price: priceInPln,
-                    originalPrice: item.original_price ? (item.currency === 'USD' ? item.original_price * 4 / 100 : item.original_price / 100) : undefined,
-                    discountPercent: item.discount_percent || 0,
-                    tags: [],
-                    osWindows: item.windows_available ?? true
-                }
+            // KATEGORYZACJA SUROWYCH KANDYDATÓW (Lazy Loading oddeleguje odpytywanie gier na barki kolumn!)
+            // Zgrupujmy je szacunkowo na bazie powierzchownie podanej ceny ze SteamSpy 
+            const estHigh = uniqueCandidates.filter(c => {
+                let p = c.final_price ? c.final_price / 100 : 0
+                if (c.currency === 'USD') p *= 4
+                return p > 90
+            })
+            const estMid = uniqueCandidates.filter(c => {
+                let p = c.final_price ? c.final_price / 100 : 0
+                if (c.currency === 'USD') p *= 4
+                return p > 40 && p <= 90
+            })
+            const estLow = uniqueCandidates.filter(c => {
+                let p = c.final_price ? c.final_price / 100 : 0
+                if (c.currency === 'USD') p *= 4
+                return p <= 40
             })
 
-            setGames(mappedGames)
+            setTier1Candidates(estLow)
+            setTier2Candidates(estMid)
+            setTier3Candidates(estHigh)
+
         } catch (err) {
             console.error('Error fetching games:', err)
             setError('Nie udało się pobrać gier. Spróbuj ponownie później.')
@@ -149,10 +237,6 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
     useEffect(() => {
         fetchGames()
     }, [fetchGames])
-
-    const tier1 = games.filter(g => (g.price ?? 0) <= 30)
-    const tier2 = games.filter(g => (g.price ?? 0) > 30 && (g.price ?? 0) <= 60)
-    const tier3 = games.filter(g => (g.price ?? 0) > 60)
 
     const handleCardClick = (id: string | number) => navigate(`/games/${id}`)
 
@@ -202,21 +286,24 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
                     <PriceTierColumn
                         title="BUDŻETOWE SKARBY"
                         icon={<Sparkles className="tier-icon" />}
-                        games={tier1}
+                        rawCandidates={tier1Candidates}
+                        categoryType={categoryType}
                         colorClass="tier-low"
                         onCardClick={handleCardClick}
                     />
                     <PriceTierColumn
                         title="OPTYMALNE WYBORY"
                         icon={<DollarSign className="tier-icon" />}
-                        games={tier2}
+                        rawCandidates={tier2Candidates}
+                        categoryType={categoryType}
                         colorClass="tier-mid"
                         onCardClick={handleCardClick}
                     />
                     <PriceTierColumn
                         title="DOŚWIADCZENIE PREMIUM"
                         icon={<TrendingUp className="tier-icon" />}
-                        games={tier3}
+                        rawCandidates={tier3Candidates}
+                        categoryType={categoryType}
                         colorClass="tier-high"
                         onCardClick={handleCardClick}
                     />
