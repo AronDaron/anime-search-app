@@ -306,8 +306,8 @@ export const GameDetails: React.FC = () => {
       <div className="game-content-wrapper">
         {/* Wróć & Tytuł */}
         <div className="game-header-top">
-          <button className="back-btn" onClick={() => navigate('/games')}>
-            <ArrowLeft size={20} /> Sklep Główny
+          <button className="back-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} /> Wróć
           </button>
           <h1 className="game-main-title">{game.name}</h1>
         </div>

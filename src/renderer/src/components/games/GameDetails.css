@@ -69,7 +69,6 @@
   outline: none !important;
   color: var(--accent-cyan);
   text-shadow: 0 0 12px rgba(0, 243, 255, 0.6);
-  transform: translateX(-4px);
 }
 
 .back-btn:hover svg {
