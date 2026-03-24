@@ -177,17 +177,10 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
             let allItems: SteamFeaturedCategoryItem[] = []
 
             if (selectedGenre === 'All') {
-                if (categoryType === 'new') {
-                    const featured = await getSteamStoreFeaturedCategories()
-                    const storeGames = featured?.new_releases?.items || []
-                    const spyNew = await getSteamSpyByTag('newreleases')
-                    allItems = [...storeGames, ...spyNew]
-                } else {
-                    const featured = await getSteamStoreFeaturedCategories()
-                    const storeSpecials = (featured?.specials?.items || []).filter(item => item.discount_percent > 0)
-                    const spySpecials = (await getSteamSpyByTag('specials')).filter(item => item.discount_percent > 0)
-                    allItems = [...storeSpecials, ...spySpecials]
-                }
+                const featured = await getSteamStoreFeaturedCategories()
+                const storeSpecials = (featured?.specials?.items || []).filter(item => item.discount_percent > 0)
+                const spySpecials = (await getSteamSpyByTag('specials')).filter(item => item.discount_percent > 0)
+                allItems = [...storeSpecials, ...spySpecials]
             } else {
                 const genreGames = await searchSteamGamesByGenre(selectedGenre)
                 // Nie filtrujemy po discounted/discount_percent - SteamSpy ma nieaktualne dane o zniżkach.

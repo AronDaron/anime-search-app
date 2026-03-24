@@ -46,8 +46,6 @@ export const GamesHome: React.FC<GamesHomeProps> = ({ title = 'Polecane i Wyró�
 
                 if (title === 'Promocje Steam') {
                     selectedItems = categories?.specials?.items || [];
-                } else if (title === 'Nowości na Steam') {
-                    selectedItems = categories?.new_releases?.items || [];
                 } else {
                     // Domyślnie miksujemy duże nagłówki z bestsellerami
                     const featureItems = categories?.['0']?.items || categories?.large_capsules?.items || [];

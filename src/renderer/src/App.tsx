@@ -77,7 +77,6 @@ function App(): React.JSX.Element {
           <Route path="/games/deals" element={<GamesPriceTieredView title="Promocje Steam" categoryType="deals" />} />
           <Route path="/games/genres" element={<GameGenresView />} />
           <Route path="/games/filter-search" element={<GameFilterSearchView />} />
-          <Route path="/games/new" element={<GamesPriceTieredView title="Nowości na Steam" categoryType="new" />} />
           <Route path="/games/calendar" element={<GamesCalendarView />} />
           <Route path="/games/profile-analyzer" element={<GamesProfileAnalyzer />} />
           <Route path="/games/recommendations" element={<GameRecommendationsView />} />
