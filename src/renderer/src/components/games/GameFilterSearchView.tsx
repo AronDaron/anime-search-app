@@ -90,13 +90,17 @@ export const GameFilterSearchView: React.FC = () => {
 
                 if (item.currency === 'USD') priceInPln = priceInPln * 4
 
-                // Szacowanie roku produkcji
+                // Szacowanie roku produkcji (przybliżone na bazie AppID)
+                // Uwaga: AppID jest nieciągłe - duże ID nie zawsze = nowa gra, dlatego cap na 2026
                 let estimatedYear = 2015
                 if (appId < 100000) estimatedYear = 2004 + Math.floor(appId / 15000)
                 else if (appId < 300000) estimatedYear = 2010 + Math.floor((appId - 100000) / 40000)
                 else if (appId < 600000) estimatedYear = 2014 + Math.floor((appId - 300000) / 60000)
                 else if (appId < 1500000) estimatedYear = 2018 + Math.floor((appId - 600000) / 150000)
-                else estimatedYear = 2023 + Math.floor((appId - 1500000) / 300000)
+                else if (appId < 3000000) estimatedYear = 2022 + Math.floor((appId - 1500000) / 500000)
+                else estimatedYear = 2024
+                // Bezpieczny cap - szacowanie jest przybliżone, nie odrzucamy nowszych gier
+                estimatedYear = Math.min(estimatedYear, new Date().getFullYear())
 
                 return {
                     id: appId.toString(),
@@ -108,7 +112,7 @@ export const GameFilterSearchView: React.FC = () => {
                     tags: item.tags || [],
                     osWindows: item.windows_available ?? true,
                     isDlc: item.type === 'dlc' || item.type === 'DLC',
-                    releaseYear: Math.min(estimatedYear, 2026)
+                    releaseYear: estimatedYear
                 }
             })
 

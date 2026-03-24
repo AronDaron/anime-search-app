@@ -190,11 +190,10 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
                 }
             } else {
                 const genreGames = await searchSteamGamesByGenre(selectedGenre)
-                if (categoryType === 'deals') {
-                    allItems = genreGames.filter(item => item.discounted || item.discount_percent > 0)
-                } else {
-                    allItems = genreGames.sort((a, b) => b.id - a.id).slice(0, 500)
-                }
+                // Nie filtrujemy po discounted/discount_percent - SteamSpy ma nieaktualne dane o zniżkach.
+                // PriceTierColumn weryfikuje zniżki na żywo ze Steam API (per game).
+                // Sortujemy po ID malejąco (nowsze gry mają wyższe ID) i bierzemy max 500.
+                allItems = genreGames.sort((a, b) => b.id - a.id).slice(0, 500)
             }
 
             const uniqueMap = new Map<number, SteamFeaturedCategoryItem>()
@@ -204,27 +203,37 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
 
             const uniqueCandidates = Array.from(uniqueMap.values())
 
-            // KATEGORYZACJA SUROWYCH KANDYDATÓW (Lazy Loading oddeleguje odpytywanie gier na barki kolumn!)
-            // Zgrupujmy je szacunkowo na bazie powierzchownie podanej ceny ze SteamSpy 
-            const estHigh = uniqueCandidates.filter(c => {
-                let p = c.final_price ? c.final_price / 100 : 0
-                if (c.currency === 'USD') p *= 4
-                return p > 90
-            })
-            const estMid = uniqueCandidates.filter(c => {
-                let p = c.final_price ? c.final_price / 100 : 0
-                if (c.currency === 'USD') p *= 4
-                return p > 40 && p <= 90
-            })
-            const estLow = uniqueCandidates.filter(c => {
-                let p = c.final_price ? c.final_price / 100 : 0
+            // KATEGORYZACJA SUROWYCH KANDYDATÓW
+            // SteamSpy często zwraca price=0 (brak danych) - wtedy rozdzielamy równomiernie na wszystkie tiery.
+            // PriceTierColumn weryfikuje i wyświetla realne ceny ze Steam API.
+            const withPrice = uniqueCandidates.filter(c => c.final_price > 0)
+            const noPrice   = uniqueCandidates.filter(c => !c.final_price || c.final_price === 0)
+
+            const pricedLow = withPrice.filter(c => {
+                let p = c.final_price / 100
                 if (c.currency === 'USD') p *= 4
                 return p <= 40
             })
+            const pricedMid = withPrice.filter(c => {
+                let p = c.final_price / 100
+                if (c.currency === 'USD') p *= 4
+                return p > 40 && p <= 90
+            })
+            const pricedHigh = withPrice.filter(c => {
+                let p = c.final_price / 100
+                if (c.currency === 'USD') p *= 4
+                return p > 90
+            })
 
-            setTier1Candidates(estLow)
-            setTier2Candidates(estMid)
-            setTier3Candidates(estHigh)
+            // Gry bez danych cenowych → równomierny podział pomiędzy tiery
+            const chunk = Math.ceil(noPrice.length / 3)
+            const unknownLow  = noPrice.slice(0, chunk)
+            const unknownMid  = noPrice.slice(chunk, chunk * 2)
+            const unknownHigh = noPrice.slice(chunk * 2)
+
+            setTier1Candidates([...pricedLow,  ...unknownLow])
+            setTier2Candidates([...pricedMid,  ...unknownMid])
+            setTier3Candidates([...pricedHigh, ...unknownHigh])
 
         } catch (err) {
             console.error('Error fetching games:', err)

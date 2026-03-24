@@ -204,15 +204,10 @@ export const searchSteamGamesByGenre = async (
     ]
 
     const isPrimaryGenre = spyGenres.includes(genre)
-    const params: Record<string, string> = isPrimaryGenre 
-      ? { request: 'genre', genre: genre } 
-      : { request: 'tag', tag: genre }
 
-    const response = await fetchSteamData(url, params)
-
-    if (response && typeof response === 'object' && !Array.isArray(response)) {
-      // Mapujemy WSZYSTKIE gry z gatunku (bez slice)
-      const items: SteamFeaturedCategoryItem[] = Object.values(response)
+    const mapResponse = (response: any): SteamFeaturedCategoryItem[] => {
+      if (!response || typeof response !== 'object' || Array.isArray(response)) return []
+      return Object.values(response)
         .filter((g: any) => g && g.appid)
         .map((spyGame: any) => {
           const finalPriceCents = Number(spyGame.price || 0)
@@ -237,11 +232,27 @@ export const searchSteamGamesByGenre = async (
             type: 'game'
           } as SteamFeaturedCategoryItem
         })
-
-      return items
     }
 
-    return []
+    // Próba 1: primary endpoint (genre lub tag)
+    const primaryParams: Record<string, string> = isPrimaryGenre 
+      ? { request: 'genre', genre: genre } 
+      : { request: 'tag', tag: genre }
+
+    const response1 = await fetchSteamData(url, primaryParams)
+    const items1 = mapResponse(response1)
+
+    if (items1.length > 0) return items1
+
+    // Fallback: jeżeli primary endpoint zwrócił 0 wyników – próbuj przeciwny endpoint
+    console.warn(`[SteamSpy] Brak wyników dla ${JSON.stringify(primaryParams)}, próba fallback...`)
+    const fallbackParams: Record<string, string> = isPrimaryGenre
+      ? { request: 'tag', tag: genre }
+      : { request: 'genre', genre: genre }
+
+    const response2 = await fetchSteamData(url, fallbackParams)
+    return mapResponse(response2)
+
   } catch (e: any) {
     console.error(`Błąd podczas wyszukiwania gier z gatunku ${genre}:`, e)
     return []
