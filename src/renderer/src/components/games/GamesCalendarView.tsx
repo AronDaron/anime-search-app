@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar as CalendarIcon, ChevronLeft, Info } from 'lucide-react'
-import { getSteamPopularComingSoon, getMultipleSteamAppDetails, SteamAppDetails } from '../../api/steamStore'
+import { getSteamStoreFeaturedCategories, getSteamPopularComingSoon, getRecentSteamHits, getMultipleSteamAppDetails, SteamAppDetails } from '../../api/steamStore'
 import './GamesCalendarView.css'
 
 interface CalendarDay {
     date: Date
     games: SteamAppDetails[]
+    isPast: boolean
 }
 
 export const GamesCalendarView: React.FC = () => {
@@ -19,17 +20,28 @@ export const GamesCalendarView: React.FC = () => {
         const fetchCalendarData = async () => {
             setIsLoading(true)
             try {
-                // Pobieramy szerszą listę popularnych nadchodzących premier (50 pozycji)
-                const appIds = await getSteamPopularComingSoon(50)
+                // Pobieramy nadchodzące gry, hity ze SteamSpy, oraz OFICJALNE nowości ze Steama (najświeższe)
+                const [comingSoonIds, recentHitGames, featured] = await Promise.all([
+                    getSteamPopularComingSoon(50),
+                    getRecentSteamHits(),
+                    getSteamStoreFeaturedCategories()
+                ])
 
-                if (appIds.length === 0) {
+                const recentHitIds = recentHitGames.map(g => g.id)
+                const featuredNewIds = featured?.new_releases?.items?.map(g => g.id) || []
+                const featuredTopIds = featured?.top_sellers?.items?.map(g => g.id) || []
+                
+                // Łączymy wszystkie źródła by pokryć i wczoraj, i jutro
+                const allAppIds = Array.from(new Set([...comingSoonIds, ...featuredNewIds, ...featuredTopIds, ...recentHitIds])).slice(0, 100)
+
+                if (allAppIds.length === 0) {
                     setCalendarDays(generateEmptyCalendar())
                     setIsLoading(false)
                     return
                 }
 
-                // Pobieramy detale dla gier w języku angielskim, aby mieć dany o dacie premiery
-                const details = await getMultipleSteamAppDetails(appIds, 'english')
+                // Pobieramy detale dla gier w języku angielskim, aby mieć dane o dacie premiery zdatne do parsowania
+                const details = await getMultipleSteamAppDetails(allAppIds, 'english')
 
                 const days = generateCalendarDays(details)
                 setCalendarDays(days)
@@ -48,10 +60,11 @@ export const GamesCalendarView: React.FC = () => {
         const days: CalendarDay[] = []
         const today = new Date()
         today.setHours(0, 0, 0, 0)
-        for (let i = 0; i < 7; i++) {
+        // Dni od -2 (przedwczoraj) do 6 (za 6 dni) = razem 9 dni
+        for (let i = -2; i <= 6; i++) {
             const date = new Date(today)
             date.setDate(today.getDate() + i)
-            days.push({ date, games: [] })
+            days.push({ date, games: [], isPast: i < 0 })
         }
         return days
     }
@@ -61,9 +74,10 @@ export const GamesCalendarView: React.FC = () => {
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        for (let i = 0; i < 7; i++) {
+        for (let i = -2; i <= 6; i++) {
             const date = new Date(today)
             date.setDate(today.getDate() + i)
+            const isPast = i < 0
 
             const dayGames = games.filter(game => {
                 if (!game.release_date || !game.release_date.date) return false
@@ -80,7 +94,7 @@ export const GamesCalendarView: React.FC = () => {
                 }
             })
 
-            days.push({ date, games: dayGames })
+            days.push({ date, games: dayGames, isPast })
         }
         return days
     }
@@ -90,6 +104,20 @@ export const GamesCalendarView: React.FC = () => {
     }
 
     const getDayName = (date: Date) => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const diffHours = (date.getTime() - today.getTime()) / (1000 * 3600)
+        
+        if (Math.abs(diffHours) < 24 && date.getDate() === today.getDate()) {
+            return date.toLocaleDateString('pl-PL', { weekday: 'long' }) + ' (Dzisiaj)'
+        }
+        if (date < today && Math.abs(diffHours) < 48 && date.getDate() === today.getDate() - 1) {
+            return date.toLocaleDateString('pl-PL', { weekday: 'long' }) + ' (Wczoraj)'
+        }
+        if (date < today && Math.abs(diffHours) < 72 && date.getDate() === today.getDate() - 2) {
+            return date.toLocaleDateString('pl-PL', { weekday: 'long' }) + ' (Przedwczoraj)'
+        }
+        
         return date.toLocaleDateString('pl-PL', { weekday: 'long' })
     }
 
@@ -111,7 +139,7 @@ export const GamesCalendarView: React.FC = () => {
                 <div className="header-right">
                     <div className="header-info">
                         <Info size={16} />
-                        <span>Najbliższe 7 dni</span>
+                        <span>Ostatnie 48h i najbliższe 7 dni</span>
                     </div>
                 </div>
             </header>
@@ -128,10 +156,13 @@ export const GamesCalendarView: React.FC = () => {
             ) : (
                 <div className="calendar-grid">
                     {calendarDays.map((day, index) => (
-                        <div key={index} className={`calendar-day-card ${day.games.length > 0 ? 'has-games' : ''}`}>
+                        <div key={index} className={`calendar-day-card ${day.games.length > 0 ? 'has-games' : ''} ${day.isPast ? 'past-day' : ''}`}>
                             <div className="day-info">
-                                <span className="day-name">{getDayName(day.date)}</span>
+                                <span className={`day-name ${day.isPast ? 'past-text' : ''}`}>
+                                    {getDayName(day.date)}
+                                </span>
                                 <span className="day-date">{formatDate(day.date)}</span>
+                                {day.isPast && <div className="past-label">Już dostępne!</div>}
                             </div>
                             <div className="day-games-list">
                                 {day.games.length > 0 ? (

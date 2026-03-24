@@ -138,6 +138,27 @@
     flex-direction: column;
     gap: 0.8rem;
     flex: 1;
+    max-height: 580px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.day-games-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.day-games-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+
+.day-games-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 136, 0.15);
+    border-radius: 4px;
+}
+
+.day-games-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 136, 0.3);
 }
 
 .no-games-hint {
@@ -241,4 +262,51 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ---------------------------------
+   Past Days Styling (Yesterday & Before)
+----------------------------------- */
+.calendar-day-card.past-day {
+    background: rgba(15, 10, 20, 0.6);
+    border-color: rgba(191, 0, 255, 0.2);
+}
+
+.calendar-day-card.past-day.has-games {
+    border-color: rgba(191, 0, 255, 0.3);
+    box-shadow: inset 0 0 20px rgba(191, 0, 255, 0.05);
+}
+
+.calendar-day-card.past-day:hover {
+    border-color: rgba(191, 0, 255, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(191, 0, 255, 0.15);
+}
+
+.past-text {
+    color: #bf00ff;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
+}
+
+.past-label {
+    margin-top: 0.5rem;
+    align-self: flex-start;
+    background: linear-gradient(90deg, rgba(191, 0, 255, 0.2), rgba(191, 0, 255, 0.05));
+    border: 1px solid rgba(191, 0, 255, 0.4);
+    color: #df80ff;
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 0 10px rgba(191, 0, 255, 0.2);
+}
+
+.calendar-day-card.past-day .day-games-list::-webkit-scrollbar-thumb {
+    background: rgba(191, 0, 255, 0.15);
+}
+
+.calendar-day-card.past-day .day-games-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(191, 0, 255, 0.3);
 }
