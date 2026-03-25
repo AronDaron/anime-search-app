@@ -38,13 +38,15 @@ const PriceTierColumn: React.FC<{
         setCurrentIndex(0)
     }, [rawCandidates])
 
-    // Funkcja pobierająca zaledwie 12 sztuk w locie w celu oszczędzenia limitu 429
+    // Pobiera 6 gier naraz w grupach po 3, aby nie przekroczyć limitu 429
     const loadMoreDeals = useCallback(async () => {
         if (loadingMore || currentIndex >= rawCandidates.length) return
 
         setLoadingMore(true)
         try {
-            const nextBatch = rawCandidates.slice(currentIndex, currentIndex + 12)
+            const BATCH_SIZE = 6
+            const GROUP_SIZE = 3
+            const nextBatch = rawCandidates.slice(currentIndex, currentIndex + BATCH_SIZE)
             const idsToCheck = nextBatch.map(c => c.id)
 
             if (idsToCheck.length === 0) {
@@ -53,9 +55,20 @@ const PriceTierColumn: React.FC<{
             }
 
             const { getMultipleSteamAppDetails } = await import('../../api/steamStore')
-            const freshSteamData = await getMultipleSteamAppDetails(idsToCheck)
+
+            // Wysyłaj requesty grupami po GROUP_SIZE, z krótką przerwą między grupami
+            const allFreshData: any[] = []
+            for (let i = 0; i < idsToCheck.length; i += GROUP_SIZE) {
+                const groupIds = idsToCheck.slice(i, i + GROUP_SIZE)
+                const groupData = await getMultipleSteamAppDetails(groupIds)
+                allFreshData.push(...groupData)
+                if (i + GROUP_SIZE < idsToCheck.length) {
+                    await new Promise(resolve => setTimeout(resolve, 300))
+                }
+            }
+
             const freshMap = new Map<number, any>()
-            freshSteamData.forEach(game => freshMap.set(game.steam_appid, game))
+            allFreshData.forEach(game => freshMap.set(game.steam_appid, game))
 
             const newGames: GameData[] = []
 
@@ -100,7 +113,7 @@ const PriceTierColumn: React.FC<{
                 const uniqueNewGames = newGames.filter(g => !existingIds.has(g.id))
                 return [...prev, ...uniqueNewGames]
             })
-            setCurrentIndex(prev => prev + 12)
+            setCurrentIndex(prev => prev + BATCH_SIZE)
         } catch (err) {
             console.error('Error loading more deals:', err)
         } finally {
@@ -186,7 +199,7 @@ export const GamesPriceTieredView: React.FC<GamesPriceTieredViewProps> = ({ titl
                 // Nie filtrujemy po discounted/discount_percent - SteamSpy ma nieaktualne dane o zniżkach.
                 // PriceTierColumn weryfikuje zniżki na żywo ze Steam API (per game).
                 // Sortujemy po ID malejąco (nowsze gry mają wyższe ID) i bierzemy max 500.
-                allItems = genreGames.sort((a, b) => b.id - a.id).slice(0, 500)
+                allItems = genreGames.sort((a, b) => b.id - a.id).slice(0, 150)
             }
 
             const uniqueMap = new Map<number, SteamFeaturedCategoryItem>()

@@ -10,8 +10,8 @@ import './GameFilterSearchView.css'   // Specialized game filter styles
 
 import { GAME_GENRES } from '../../constants/gameGenres'
 
-const INITIAL_DISPLAY_LIMIT = 40
-const SCROLL_INCREMENT = 20
+const INITIAL_DISPLAY_LIMIT = 24
+const SCROLL_INCREMENT = 12
 
 export const GameFilterSearchView: React.FC = () => {
     const navigate = useNavigate()
@@ -67,7 +67,8 @@ export const GameFilterSearchView: React.FC = () => {
                     setLoadingProgress(`Gatunek: ${genre} (${i + 1}/${genresToFetch.length})...`)
 
                     if (!genreCache.current[genre]) {
-                        genreCache.current[genre] = await searchSteamGamesByGenre(genre)
+                        const raw = await searchSteamGamesByGenre(genre)
+                        genreCache.current[genre] = raw.slice(0, 500)
                     }
                     allFetched.push(...genreCache.current[genre])
                 }
